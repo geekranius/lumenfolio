@@ -20,12 +20,15 @@ export async function processGalleryAI(env: Env, galleryId: string): Promise<voi
       .all<{ id: string; width: number | null; height: number | null; caption: string | null; tags: string | null; variants: string | null }>()
 
     const captions: string[] = []
+    const started = Date.now()
 
     for (const img of images.results) {
       if (img.caption && img.caption.trim()) {
         captions.push(img.caption)
         continue
       }
+      // Leave headroom for the gallery metadata step within the 30s waitUntil budget.
+      if (Date.now() - started > 20000) break
       const variants = jsonArr(img.variants).map(Number).filter((n) => n > 0)
       const width = pickWidth(variants, 640)
       const key = imageKey(env, galleryId, img.id, width)

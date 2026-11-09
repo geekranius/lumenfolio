@@ -5,6 +5,7 @@ import { json, err, uuid, nowIso } from '../lib/helpers'
 import { mapImage, type ImageRow } from '../lib/serialize'
 import { processGalleryAI } from '../lib/process'
 import { deleteObjectPrefix } from '../lib/r2'
+import { pickCover } from '../lib/ai'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -35,10 +36,12 @@ app.post('/admin', requireAdmin, async (c) => {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
   const batch = []
+  const inserted: Array<{ id: string; width: number | null; height: number | null }> = []
   for (let i = 0; i < images.length; i++) {
     const img = images[i]
     const id = img.id || uuid()
     const variants = Array.isArray(img.variants) ? img.variants.map(Number).filter((n: number) => n > 0) : []
+    inserted.push({ id, width: img.width ?? null, height: img.height ?? null })
     batch.push(
       stmt.bind(
         id,
@@ -55,6 +58,14 @@ app.post('/admin', requireAdmin, async (c) => {
     )
   }
   await c.env.DB.batch(batch)
+
+  // Set a cover image immediately (no AI needed) so the gallery always has one.
+  const coverId = pickCover(inserted)
+  if (coverId) {
+    await c.env.DB.prepare('UPDATE galleries SET cover_image_id = COALESCE(cover_image_id, ?) WHERE id = ?')
+      .bind(coverId, galleryId)
+      .run()
+  }
 
   c.executionCtx.waitUntil(processGalleryAI(c.env, galleryId))
   return json({ ok: true, count: images.length })
