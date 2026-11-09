@@ -9,98 +9,135 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(binary)
 }
 
-export interface AiResult {
-  caption?: string
-  tags?: string[]
+// Vision captioning: Meta Llama 3.2 11B Vision (built-in, free tier).
+// Requires a one-time license acceptance per account; handled automatically.
+const VISION_MODEL = '@cf/meta/llama-3.2-11b-vision-instruct'
+const TEXT_MODEL = '@cf/meta/llama-3.2-3b-instruct'
+
+async function visionRun(ai: Ai, input: Record<string, unknown>): Promise<any> {
+  try {
+    return await (ai as any).run(VISION_MODEL, input)
+  } catch (e: any) {
+    const msg = String(e?.message || e)
+    if (/agree|5016/i.test(msg)) {
+      try {
+        await (ai as any).run(VISION_MODEL, { prompt: 'agree' })
+      } catch {
+        /* acceptance returns a confirmation "error"; ignore it */
+      }
+      return await (ai as any).run(VISION_MODEL, input)
+    }
+    throw e
+  }
 }
 
 /**
- * Generate a caption for an image using the Moondream vision model.
- * Returns null if AI is unavailable or fails (callers must degrade gracefully).
+ * Generate a caption for an image using Llama 3.2 Vision.
+ * `contentType` must match the actual bytes (WebP for normal uploads, JPEG for
+ * rapidraw) so the model can decode the image.
  */
-export async function captionImage(ai: Ai, bytes: Uint8Array): Promise<string | null> {
+export async function captionImage(ai: Ai, bytes: Uint8Array, contentType = 'image/webp'): Promise<string | null> {
   try {
-    const dataUri = `data:image/jpeg;base64,${toBase64(bytes)}`
-    const res: any = await ai.run('@cf/moondream/moondream3.1-9B-A2B', {
-      task: 'caption',
+    const dataUri = `data:${contentType};base64,${toBase64(bytes)}`
+    const res: any = await visionRun(ai, {
+      prompt:
+        'Describe this photo in one clear, concise sentence. Mention the main subject, setting and mood. Do not say that it is an image.',
       image: dataUri,
-      caption_length: 'normal',
-      max_tokens: 256,
+      max_tokens: 120,
     })
-    const caption = res?.description ?? res?.caption ?? res?.result
-    return typeof caption === 'string' && caption.trim() ? caption.trim() : null
+    const text = res?.response ?? res?.choices?.[0]?.message?.content ?? res?.description
+    return typeof text === 'string' && text.trim() ? text.trim() : null
   } catch {
     return null
   }
 }
 
 /**
- * Detect objects/scene labels in an image. Returns the top labels.
+ * Per-image tags. Object detection (DETR) is too noisy for photography, so we
+ * keep this empty and derive meaningful tags at the gallery level from captions.
  */
-export async function tagImage(ai: Ai, bytes: Uint8Array): Promise<string[]> {
-  try {
-    const dataUri = `data:image/jpeg;base64,${toBase64(bytes)}`
-    const res: any = await ai.run('@cf/facebook/detr-resnet-50', {
-      image: dataUri,
-    })
-    if (!Array.isArray(res)) return []
-    return res
-      .filter((d: any) => d?.label && (d?.score ?? 0) > 0.5)
-      .sort((a: any, b: any) => (b.score ?? 0) - (a.score ?? 0))
-      .slice(0, 8)
-      .map((d: any) => d.label)
-  } catch {
-    return []
+export async function tagImage(_ai: Ai, _bytes: Uint8Array): Promise<string[]> {
+  return []
+}
+
+const STOPWORDS = new Set(
+  'the and with that this from into over under while which their there where these those image photo photograph appears depicts depicting shows showing very more some such have has are was were will would could should about above after before below between during through against because being been also onto just only than then them they his her its our your a an of in on at to for by is it as be or we you he she'.split(
+    /\s+/,
+  ),
+)
+
+function extractTags(captions: string[]): string[] {
+  const counts = new Map<string, number>()
+  for (const c of captions) {
+    for (const raw of c.toLowerCase().split(/[^a-zà-ž0-9]+/i)) {
+      const w = raw.trim()
+      if (w.length < 4 || STOPWORDS.has(w)) continue
+      counts.set(w, (counts.get(w) ?? 0) + 1)
+    }
   }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([w]) => w)
 }
 
 /**
- * Use an LLM to derive gallery metadata (title, description, tags) from the
- * user-provided title and the AI captions of the gallery's photos.
+ * Derive gallery metadata (description, tags) from the AI captions using an LLM,
+ * with a deterministic fallback so the fields are never left empty.
  */
 export async function galleryMeta(
   ai: Ai,
   userTitle: string,
   captions: string[],
-): Promise<{ title: string; description: string; tags: string[] } | null> {
+): Promise<{ title: string; description: string; tags: string[] }> {
+  const fallback = {
+    title: userTitle,
+    description: captions.slice(0, 2).join(' ').slice(0, 320).trim(),
+    tags: extractTags(captions),
+  }
+
   try {
-    const snippet = captions.slice(0, 40).join('\n- ')
+    const snippet = captions.slice(0, 30).join('\n- ')
     const prompt = [
-      'You are helping a professional photographer build a portfolio.',
-      'Based on the following image captions, produce concise, professional metadata.',
+      'You are helping a professional photographer write portfolio metadata.',
+      'Based on the image captions below, write a description and tags.',
       '',
       `Working title: ${userTitle || '(none)'}`,
       '',
       'Image captions:',
       `- ${snippet}`,
       '',
-      'Respond ONLY with valid JSON of the form:',
-      '{"title":"...","description":"...","tags":["...","..."]}',
-      'Title max 6 words, description 1-2 sentences, 3-6 tags. Use the language of the captions if possible.',
+      'Respond ONLY with valid JSON, no markdown, in this exact shape:',
+      '{"description":"1-2 sentences","tags":["tag1","tag2","tag3"]}',
+      'Use the same language as the captions.',
     ].join('\n')
 
-    const res: any = await ai.run('@cf/meta/llama-3.1-8b-instruct', {
+    const res: any = await (ai as any).run(TEXT_MODEL, {
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 400,
+      max_tokens: 350,
     })
 
-    const text: string = (res?.response ?? '').trim()
+    const text: string = (res?.response ?? res?.choices?.[0]?.message?.content ?? '').trim()
     const match = text.match(/\{[\s\S]*\}/)
-    if (!match) return null
+    if (!match) return fallback
+
     const parsed = JSON.parse(match[0])
+    const description = String(parsed.description || '').trim()
+    const tags = Array.isArray(parsed.tags) ? parsed.tags.filter(Boolean).slice(0, 8).map(String) : []
+
+    if (!description && tags.length === 0) return fallback
     return {
-      title: (parsed.title as string)?.trim() || userTitle,
-      description: (parsed.description as string)?.trim() || '',
-      tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 8).map(String) : [],
+      title: userTitle,
+      description: description || fallback.description,
+      tags: tags.length ? tags : fallback.tags,
     }
   } catch {
-    return null
+    return fallback
   }
 }
 
 /**
- * Derive a single "best cover" image id from a list of images. Simple heuristic:
- * prefer landscape images with the largest area (good covers).
+ * Derive a single "best cover" image id. Prefer large landscape images.
  */
 export function pickCover(images: Array<{ id: string; width?: number | null; height?: number | null }>): string | null {
   if (images.length === 0) return null

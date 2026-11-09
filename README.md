@@ -5,7 +5,7 @@
 Fotograf odabere mapu sa slikama, napiše naziv (koncert, vjenčanje, tema…), a sustav:
 
 - automatski **obrađuje i smanjuje fotografije** (više veličina, WebP, `srcset` → sve responzivno),
-- **AI opisuje svaku fotografiju**, dodaje **tagove** (detekcija objekata/scena),
+- **AI opisuje svaku fotografiju** i iz opisa generira **tagove**, opis galerije i naslovnu sliku,
 - **AI predlaže naslov, opis i naslovnu sliku** galerije + SEO meta podatke,
 - izrađuje **galerije, meni, kalendar događaja**, blog objave, stranice, društvene mreže,
 - omogućuje **embed Instagram/TikTok/Facebook/X/YouTube** objava,
@@ -19,7 +19,7 @@ Fotograf odabere mapu sa slikama, napiše naziv (koncert, vjenčanje, tema…), 
 2. U `README` (ili bilo gdje) stavi gumb:
 
 ```html
-<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/TVOJ_USER/TVOJ_REPO">
+<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/geekranius/lumenfolio">
   <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare" />
 </a>
 ```
@@ -39,6 +39,37 @@ Fotograf odabere mapu sa slikama, napiše naziv (koncert, vjenčanje, tema…), 
 > **Napomena:** AI (Workers AI) mora biti omogućen na računu (besplatan je, samo treba biti aktivan u dashboardu). Ako AI nije dostupan, sustav i dalje radi — samo preskače automatske opise.
 
 5. (Opcionalno) Dodaj **vlastitu domenu** u Worker → Settings → Domains.
+
+---
+
+## ☁️ Detaljno: što treba za Cloudflare
+
+### Worker, ne „Pages" (važno)
+Projekt se deploya kao **Cloudflare Worker sa statičkim assetima** — to je danas ekvivalent Pagesa (Cloudflare preporučuje Worker za full-stack aplikacije). Razlika:
+
+- **Worker** (ovaj projekt): first-class **Workers AI + D1 + R2** binding, jedan deploy, i **one-click „Deploy to Cloudflare" gumb**.
+- **Pages**: može hostati isto, ali bindinge (AI / D1 / R2) moraš ručno podešavati u dashboardu, i **nema one-click gumb** (gumb podržava samo Workere).
+
+Rezultat je isti: stranica na Cloudflareu, na `*.workers.dev` ili tvojoj domeni, s besplatnim R2 skladištem.
+
+### API token (za ručni `wrangler` deploy)
+Za ručni deploy trebaš Cloudflare **API token** (My Profile → API Tokens) s:
+- `Workers Scripts: Edit`
+- `D1: Edit`
+- `Workers R2 Storage: Edit`
+
+i `CLOUDFLARE_ACCOUNT_ID`.
+
+> Predložak „Edit Cloudflare Workers" pokriva Workers + R2, ali **ne sadrži D1** — dodaj `D1: Edit` ručno (ili „Start from scratch" s točno te 3 permisije).
+
+### AI modeli (besplatni tier)
+- **Opis fotografija**: `@cf/meta/llama-3.2-11b-vision-instruct` (Meta Llama 3.2 Vision)
+- **Opis / tagovi galerije**: `@cf/meta/llama-3.2-3b-instruct`
+- Prvi poziv vizijskog modela traži prihvaćanje licence — kod to rješava automatski.
+- Partner-modeli (npr. Moondream) na free tieru mogu vraćati prazno, zato koristimo Meta modele.
+
+### Vlastita domena
+Worker → **Settings → Domains & Routes → Add custom domain**.
 
 ---
 
@@ -70,6 +101,8 @@ npx wrangler secret put ADMIN_JWT_SECRET
 npx wrangler secret put RAPIDRAW_API_KEY
 npm run deploy                                   # build frontenda + wrangler deploy
 ```
+
+> **Vlasnik sačuvane instance:** ako imaš `wrangler.local.jsonc` (gitignored, sadrži tvoj pravi `database_id`), deployaj s `npm run deploy:owner`. Javni repo namjerno drži all-zero placeholder u `wrangler.jsonc` kako bi one-click gumb kod drugih fotografa sam napravio njihovu bazu.
 
 ---
 

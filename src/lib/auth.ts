@@ -2,10 +2,12 @@ import { sign, verify } from 'hono/jwt'
 import type { Env } from '../types'
 import { err } from './helpers'
 
-const EXP = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // 7 days
+const EXP = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // 7 days (unused legacy)
 
 export async function signToken(env: Env): Promise<string> {
-  return sign({ sub: 'admin', role: 'admin', exp: EXP }, env.ADMIN_JWT_SECRET, 'HS256')
+  // Compute expiry at request time (not module load) so tokens are always valid.
+  const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // 7 days
+  return sign({ sub: 'admin', role: 'admin', exp }, env.ADMIN_JWT_SECRET, 'HS256')
 }
 
 export async function verifyToken(token: string, env: Env): Promise<boolean> {

@@ -5,7 +5,8 @@
   "compatibility_date": "2025-01-01",
 
   "assets": {
-    "directory": "./public"
+    "directory": "./public",
+    "binding": "ASSETS"
   },
 
   "ai": { "binding": "AI" },
@@ -16,7 +17,8 @@
       "database_name": "lumenfolio-db",
       // All-zero UUID = placeholder: the "Deploy to Cloudflare" button detects it
       // and auto-provisions a fresh D1 database on the user's account.
-      // For manual deploy, replace with the ID from `wrangler d1 create lumenfolio-db`.
+      // For your own deploy, run `wrangler d1 create lumenfolio-db` and put the real
+      // ID here (or use `npm run deploy:owner` with wrangler.local.jsonc).
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations"
     }

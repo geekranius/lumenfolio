@@ -23,25 +23,32 @@ app.all('*', async (c) => {
   const url = new URL(c.req.url)
   const path = url.pathname
 
-  // Real static files: serve directly from the ASSETS binding.
-  if (path.startsWith('/assets/') || path.startsWith('/favicon') || path.startsWith('/robots') || /\.[a-z0-9]{1,6}$/i.test(path)) {
-    return c.env.ASSETS.fetch(c.req.raw)
-  }
+  try {
+    // Real static files: serve directly from the ASSETS binding.
+    if (path.startsWith('/assets/') || path.startsWith('/favicon') || path.startsWith('/robots') || /\.[a-z0-9]{1,6}$/i.test(path)) {
+      return c.env.ASSETS.fetch(c.req.raw)
+    }
 
-  // Navigation route → return the SPA shell with SSR meta injected.
-  const index = await c.env.ASSETS.fetch(new Request(url.origin + '/index.html'))
-  if (!index.ok) {
-    return new Response('Frontend nije izgrađen. Pokreni `npm run build` pa ponovno deployaj.', {
+    // Navigation route → return the SPA shell with SSR meta injected.
+    const index = await c.env.ASSETS.fetch(new Request(url.origin + '/index.html'))
+    if (!index.ok) {
+      return new Response('Frontend nije izgrađen. Pokreni `npm run build` pa ponovno deployaj.', {
+        status: 500,
+        headers: { 'content-type': 'text/plain; charset=utf-8' },
+      })
+    }
+
+    const html = await index.text()
+    const meta = await buildMeta(c.env, path, url.origin)
+    return new Response(injectMeta(html, meta), {
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+    })
+  } catch (e) {
+    return new Response(`Server error: ${(e as Error).message}`, {
       status: 500,
       headers: { 'content-type': 'text/plain; charset=utf-8' },
     })
   }
-
-  const html = await index.text()
-  const meta = await buildMeta(c.env, path, url.origin)
-  return new Response(injectMeta(html, meta), {
-    headers: { 'content-type': 'text/html; charset=utf-8' },
-  })
 })
 
 interface Meta {

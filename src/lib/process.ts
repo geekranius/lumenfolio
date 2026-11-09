@@ -33,7 +33,8 @@ export async function processGalleryAI(env: Env, galleryId: string): Promise<voi
       if (!obj) continue
 
       const bytes = new Uint8Array(await obj.arrayBuffer())
-      const caption = await captionImage(env.AI, bytes)
+      const contentType = obj.httpMetadata?.contentType || 'image/webp'
+      const caption = await captionImage(env.AI, bytes, contentType)
       const tags = await tagImage(env.AI, bytes)
 
       await env.DB.prepare('UPDATE images SET caption = ?, alt = ?, tags = ?, ai_caption = 1 WHERE id = ?')
