@@ -1,0 +1,36 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lumenfolio",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-01",
+
+  "assets": {
+    "directory": "./public"
+  },
+
+  "ai": { "binding": "AI" },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lumenfolio-db",
+      // All-zero UUID = placeholder: the "Deploy to Cloudflare" button detects it
+      // and auto-provisions a fresh D1 database on the user's account.
+      // For manual deploy, replace with the ID from `wrangler d1 create lumenfolio-db`.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "r2_buckets": [
+    { "binding": "BUCKET", "bucket_name": "lumenfolio-assets" }
+  ],
+
+  "vars": {
+    "SITE_ID": "default",
+    "ENABLE_AI": "true",
+    "DEFAULT_LOCALE": "hr"
+  },
+
+  "observability": { "enabled": true }
+}

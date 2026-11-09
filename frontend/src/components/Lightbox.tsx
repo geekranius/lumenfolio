@@ -1,0 +1,78 @@
+import { useEffect } from 'react'
+import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import type { ImageItem } from '../types'
+
+export function Lightbox({
+  images,
+  index,
+  onClose,
+  onNav,
+}: {
+  images: ImageItem[]
+  index: number
+  onClose: () => void
+  onNav: (i: number) => void
+}) {
+  const img = images[index]
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowRight') onNav((index + 1) % images.length)
+      if (e.key === 'ArrowLeft') onNav((index - 1 + images.length) % images.length)
+    }
+    window.addEventListener('keydown', handler)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', handler)
+      document.body.style.overflow = ''
+    }
+  }, [index, images.length, onClose, onNav])
+
+  if (!img) return null
+
+  return (
+    <div className="lightbox" onClick={onClose}>
+      <img
+        src={img.full}
+        alt={img.alt || img.caption || ''}
+        onClick={(e) => e.stopPropagation()}
+      />
+      <div className="lightbox-controls">
+        <button className="lb-btn lb-close" onClick={onClose} aria-label="Zatvori">
+          <X size={22} />
+        </button>
+        {images.length > 1 && (
+          <>
+            <button
+              className="lb-btn lb-prev"
+              onClick={(e) => {
+                e.stopPropagation()
+                onNav((index - 1 + images.length) % images.length)
+              }}
+              aria-label="Prethodna"
+            >
+              <ChevronLeft size={26} />
+            </button>
+            <button
+              className="lb-btn lb-next"
+              onClick={(e) => {
+                e.stopPropagation()
+                onNav((index + 1) % images.length)
+              }}
+              aria-label="Sljedeća"
+            >
+              <ChevronRight size={26} />
+            </button>
+          </>
+        )}
+        <div className="lb-caption">
+          {img.caption ? <div className="cap">{img.caption}</div> : null}
+          <div className="count">
+            {index + 1} / {images.length}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

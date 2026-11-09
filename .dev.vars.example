@@ -1,0 +1,6 @@
+# Kopiraj ovu datoteku u `.dev.vars` i postavi vlastite vrijednosti (lokalni razvoj).
+# Na produkciji (Cloudflare) ove vrijednosti postavljaš kao Worker secrets.
+
+ADMIN_PASSWORD="promijeni-me"
+ADMIN_JWT_SECRET="dugi-slučajni-string-za-potpisivanje-tokena"
+RAPIDRAW_API_KEY="kljuc-za-rapidraw-web"

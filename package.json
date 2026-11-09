@@ -1,0 +1,35 @@
+{
+  "name": "lumenfolio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI-powered photographer portfolio on Cloudflare (Workers + R2 + D1 + Workers AI). One-click deploy.",
+  "scripts": {
+    "dev:worker": "wrangler dev",
+    "dev:web": "vite",
+    "dev": "concurrently -n worker,web -c blue,magenta \"wrangler dev\" \"vite\"",
+    "build": "vite build",
+    "deploy": "npm run build && wrangler deploy",
+    "db:create": "wrangler d1 create lumenfolio-db",
+    "db:migrate:local": "wrangler d1 migrations apply lumenfolio-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply lumenfolio-db --remote",
+    "db:seed:local": "wrangler d1 execute lumenfolio-db --local --file=./migrations/0002_seed.sql"
+  },
+  "dependencies": {
+    "hono": "^4.6.14",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11",
+    "wrangler": "^3.99.0"
+  }
+}
