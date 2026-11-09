@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { formatExif } from '../lib/image'
 import type { ImageItem } from '../types'
 
 export function Lightbox({
@@ -7,11 +9,13 @@ export function Lightbox({
   index,
   onClose,
   onNav,
+  showExif = false,
 }: {
   images: ImageItem[]
   index: number
   onClose: () => void
   onNav: (i: number) => void
+  showExif?: boolean
 }) {
   const img = images[index]
 
@@ -31,7 +35,7 @@ export function Lightbox({
 
   if (!img) return null
 
-  return (
+  const node = (
     <div className="lightbox" onClick={onClose}>
       <img className="lb-img" src={img.full} alt={img.alt || img.caption || ''} onClick={(e) => e.stopPropagation()} />
 
@@ -65,6 +69,7 @@ export function Lightbox({
 
       <div className="lb-caption">
         {img.caption ? <div className="cap">{img.caption}</div> : null}
+        {showExif && img.exif ? <div className="lb-exif">{formatExif(img.exif).join('  ·  ')}</div> : null}
         <div className="count">
           {index + 1} / {images.length}
         </div>
@@ -86,4 +91,7 @@ export function Lightbox({
       ) : null}
     </div>
   )
+
+  // Render into <body> so no transformed ancestor can break `position: fixed`.
+  return createPortal(node, document.body)
 }

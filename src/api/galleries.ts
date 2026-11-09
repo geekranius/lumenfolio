@@ -63,8 +63,8 @@ app.post('/admin', requireAdmin, async (c) => {
     slug = `${baseSlug}-${n++}`
   }
   await c.env.DB.prepare(
-    `INSERT INTO galleries (id, slug, title, description, body, event_date, event_end_date, location, tags, context, sort_order, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO galleries (id, slug, title, description, body, event_date, event_end_date, location, tags, context, show_exif, sort_order, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
     .bind(
       id,
@@ -77,6 +77,7 @@ app.post('/admin', requireAdmin, async (c) => {
       body.location ?? null,
       JSON.stringify(Array.isArray(body.tags) ? body.tags : []),
       body.context ?? null,
+      body.show_exif ? 1 : 0,
       body.sort_order ?? 0,
       body.status ?? 'published',
       nowIso(),
@@ -103,7 +104,7 @@ app.put('/admin/:id', requireAdmin, async (c) => {
   if (!existing) return json({ error: 'Nije pronađeno.' }, 404)
 
   await c.env.DB.prepare(
-    `UPDATE galleries SET title = ?, description = ?, body = ?, context = ?, event_date = ?, event_end_date = ?, location = ?, tags = ?, sort_order = ?, status = ?, updated_at = ? WHERE id = ?`,
+    `UPDATE galleries SET title = ?, description = ?, body = ?, context = ?, event_date = ?, event_end_date = ?, location = ?, tags = ?, show_exif = ?, sort_order = ?, status = ?, updated_at = ? WHERE id = ?`,
   )
     .bind(
       body.title ?? existing.title,
@@ -114,6 +115,7 @@ app.put('/admin/:id', requireAdmin, async (c) => {
       body.event_end_date ?? existing.event_end_date,
       body.location ?? existing.location,
       JSON.stringify(Array.isArray(body.tags) ? body.tags : jsonArr(existing.tags)),
+      body.show_exif !== undefined ? (body.show_exif ? 1 : 0) : (existing.show_exif ? 1 : 0),
       body.sort_order ?? existing.sort_order,
       body.status ?? existing.status,
       nowIso(),

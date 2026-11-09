@@ -25,6 +25,17 @@ export function Settings() {
     setS((prev) => ({ ...prev, embeds: prev.embeds.map((x, idx) => (idx === i ? { ...x, ...patch } : x)) }))
   const rmEmbed = (i: number) => setS((prev) => ({ ...prev, embeds: prev.embeds.filter((_, idx) => idx !== i) }))
 
+  const uploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    try {
+      await api.upload('site/logo', f)
+      up({ logo: `/files/site/logo?t=${Date.now()}` })
+    } catch (err: any) {
+      alert(err.message)
+    }
+  }
+
   const save = async () => {
     setSaving(true)
     try {
@@ -79,8 +90,17 @@ export function Settings() {
             <input className="input" value={s.avatar} onChange={(e) => up({ avatar: e.target.value })} />
           </div>
           <div className="field">
-            <label>Logo (URL)</label>
-            <input className="input" value={s.logo} onChange={(e) => up({ logo: e.target.value })} />
+            <label>Logo</label>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <input className="input" value={s.logo} onChange={(e) => up({ logo: e.target.value })} placeholder="https://… ili učitaš svoj" />
+              <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap', flex: 'none' }}>
+                Učitaj
+                <input type="file" accept="image/*" hidden onChange={uploadLogo} />
+              </label>
+            </div>
+            {s.logo ? (
+              <img src={s.logo} alt="logo" style={{ height: 40, marginTop: 10, background: 'var(--surface-2)', borderRadius: 8, padding: 4 }} />
+            ) : null}
           </div>
         </div>
       </div>

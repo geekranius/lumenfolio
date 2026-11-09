@@ -16,6 +16,7 @@ export function Upload() {
   const [context, setContext] = useState('')
   const [eventDate, setEventDate] = useState('')
   const [location, setLocation] = useState('')
+  const [showExif, setShowExif] = useState(false)
 
   const [aiBusy, setAiBusy] = useState(false)
   const [aiMsg, setAiMsg] = useState('')
@@ -76,10 +77,11 @@ export function Upload() {
         context: context || null,
         event_date: eventDate || null,
         location: location || null,
+        show_exif: showExif,
       })
       const galleryId = gallery.id
 
-      const meta: Array<{ id: string; width: number; height: number; variants: number[] }> = []
+      const meta: Array<{ id: string; width: number; height: number; variants: number[]; exif?: Record<string, any> | null }> = []
       for (let i = 0; i < files.length; i++) {
         const f = files[i]
         setStatus(`Obrađujem ${i + 1}/${files.length}: ${f.name}`)
@@ -88,7 +90,7 @@ export function Upload() {
           for (const w of p.variants) {
             await api.upload(`galleries/${galleryId}/${p.id}/${w}.webp`, p.blobs[w])
           }
-          meta.push({ id: p.id, width: p.width, height: p.height, variants: p.variants })
+          meta.push({ id: p.id, width: p.width, height: p.height, variants: p.variants, exif: p.exif })
         } catch {
           /* skip unreadable file */
         }
@@ -181,6 +183,10 @@ export function Upload() {
         <div className="field">
           <label>Lokacija</label>
           <input className="input" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Zagreb" />
+        </div>
+        <div className="field" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <input type="checkbox" checked={showExif} onChange={(e) => setShowExif(e.target.checked)} />
+          <label style={{ margin: 0 }}>Prikaži EXIF podatke (kamera, objektiv, postavke) uz fotografije</label>
         </div>
       </div>
 

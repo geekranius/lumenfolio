@@ -1,5 +1,5 @@
 import type { Env, Gallery, ImageRecord } from '../types'
-import { jsonArr } from './helpers'
+import { jsonArr, parseJson } from './helpers'
 import { imagePath, pickWidth } from './r2'
 
 export interface GalleryRow {
@@ -14,6 +14,7 @@ export interface GalleryRow {
   tags: string | null
   context?: string | null
   body?: string | null
+  show_exif?: number
   sort_order: number
   status: string
   created_at: string
@@ -33,6 +34,7 @@ export function mapGallery(env: Env, row: GalleryRow): Gallery {
     tags: jsonArr(row.tags),
     context: row.context ?? null,
     body: row.body ?? null,
+    show_exif: Boolean(row.show_exif),
     sort_order: row.sort_order,
     status: row.status,
     created_at: row.created_at,
@@ -50,6 +52,7 @@ export interface ImageRow {
   caption: string | null
   tags: string | null
   variants: string | null
+  exif?: string | null
   sort_order: number
   created_at: string
 }
@@ -71,6 +74,7 @@ export function mapImage(env: Env, row: ImageRow) {
     caption: row.caption,
     tags: jsonArr(row.tags),
     sort_order: row.sort_order,
+    exif: parseJson(row.exif, null),
     variants: widths,
     src: imagePath(env, row.gallery_id, row.id, small),
     srcset: widths.map((w) => `${imagePath(env, row.gallery_id, row.id, w)} ${w}w`).join(', '),

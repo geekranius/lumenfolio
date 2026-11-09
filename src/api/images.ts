@@ -32,8 +32,8 @@ app.post('/admin', requireAdmin, async (c) => {
   if (!gallery) return json({ error: 'Galerija ne postoji.' }, 404)
 
   const stmt = c.env.DB.prepare(
-    `INSERT INTO images (id, gallery_id, width, height, alt, caption, tags, variants, sort_order, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO images (id, gallery_id, width, height, alt, caption, tags, variants, exif, sort_order, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
   const batch = []
   const inserted: Array<{ id: string; width: number | null; height: number | null }> = []
@@ -52,6 +52,7 @@ app.post('/admin', requireAdmin, async (c) => {
         img.caption ?? null,
         JSON.stringify(Array.isArray(img.tags) ? img.tags : []),
         JSON.stringify(variants),
+        img.exif ? JSON.stringify(img.exif) : null,
         img.sort_order ?? i,
         nowIso(),
       ),

@@ -19,10 +19,31 @@ interface EventRow {
 }
 
 app.get('/', async (c) => {
-  const { results } = await c.env.DB.prepare(
-    "SELECT * FROM events WHERE status = 'published' ORDER BY start_date DESC",
-  ).all<EventRow>()
-  return json(results)
+  const { results: evs } = await c.env.DB.prepare("SELECT * FROM events WHERE status = 'published'").all<EventRow>()
+  // Auto-populate the calendar from galleries: each published gallery becomes an
+  // event on its event_date (or its upload date when no date is set).
+  const { results: gals } = await c.env.DB.prepare(
+    "SELECT id, slug, title, description, event_date, location, created_at FROM galleries WHERE status = 'published'",
+  ).all<{ id: string; slug: string; title: string; description: string | null; event_date: string | null; location: string | null; created_at: string }>()
+
+  const covered = new Set(evs.map((e) => e.gallery_id).filter(Boolean))
+  const extra: EventRow[] = gals
+    .filter((g) => !covered.has(g.id))
+    .map((g) => ({
+      id: 'gallery-' + g.id,
+      title: g.title,
+      description: g.description,
+      start_date: g.event_date || (g.created_at || '').slice(0, 10),
+      end_date: null,
+      time: null,
+      location: g.location,
+      gallery_id: g.id,
+      status: 'published',
+      created_at: g.created_at,
+    }))
+
+  const all = [...evs, ...extra].sort((a, b) => (b.start_date || '').localeCompare(a.start_date || ''))
+  return json(all)
 })
 
 app.get('/admin', requireAdmin, async (c) => {

@@ -100,6 +100,34 @@ export const PRESETS: Record<string, { label: string; design: DesignConfig }> = 
     label: 'Lux',
     design: { preset: 'lux', mode: 'dark', accent: '#d4b06a', fontPair: 'bodoni-jost', layout: 'masonry', hero: 'cinematic', radius: 6, animations: true, grain: true, headingCase: 'normal' },
   },
+  gallery: {
+    label: 'Gallery Wall',
+    design: { preset: 'gallery', mode: 'light', accent: '#111111', fontPair: 'dmserif-dmsans', layout: 'grid', hero: 'minimal', radius: 2, animations: true, grain: false, headingCase: 'normal' },
+  },
+  nocturne: {
+    label: 'Nocturne',
+    design: { preset: 'nocturne', mode: 'dark', accent: '#8b5cf6', fontPair: 'bodoni-jost', layout: 'masonry', hero: 'cinematic', radius: 10, animations: true, grain: true, headingCase: 'normal' },
+  },
+  wander: {
+    label: 'Wander',
+    design: { preset: 'wander', mode: 'light', accent: '#c96f4a', fontPair: 'fraunces-inter', layout: 'masonry', hero: 'split', radius: 8, animations: true, grain: false, headingCase: 'normal' },
+  },
+  mono: {
+    label: 'Monochrome',
+    design: { preset: 'mono', mode: 'light', accent: '#111111', fontPair: 'archivo', layout: 'grid', hero: 'full', radius: 0, animations: true, grain: false, headingCase: 'uppercase' },
+  },
+  polaroid: {
+    label: 'Polaroid',
+    design: { preset: 'polaroid', mode: 'light', accent: '#e272b4', fontPair: 'fraunces-inter', layout: 'grid', hero: 'minimal', radius: 18, animations: true, grain: false, headingCase: 'normal' },
+  },
+  expose: {
+    label: 'Exposé',
+    design: { preset: 'expose', mode: 'light', accent: '#111111', fontPair: 'playfair-source', layout: 'grid', hero: 'split', radius: 0, animations: true, grain: false, headingCase: 'uppercase' },
+  },
+  reverie: {
+    label: 'Reverie',
+    design: { preset: 'reverie', mode: 'light', accent: '#b8a0d8', fontPair: 'bodoni-jost', layout: 'masonry', hero: 'minimal', radius: 16, animations: true, grain: false, headingCase: 'normal' },
+  },
 }
 
 export function normalizeDesign(d?: Partial<DesignConfig> | null): DesignConfig {

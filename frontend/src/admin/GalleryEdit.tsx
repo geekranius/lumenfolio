@@ -20,6 +20,7 @@ export function GalleryEdit() {
   const [eventDate, setEventDate] = useState('')
   const [location, setLocation] = useState('')
   const [tags, setTags] = useState('')
+  const [showExif, setShowExif] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -32,6 +33,7 @@ export function GalleryEdit() {
       setEventDate(g.event_date || '')
       setLocation(g.location || '')
       setTags((g.tags || []).join(', '))
+      setShowExif(!!g.show_exif)
       api
         .get<ImageItem[]>(`/api/images?gallery=${g.id}`)
         .then(setImages)
@@ -51,6 +53,7 @@ export function GalleryEdit() {
       event_date: eventDate || null,
       location: location || null,
       tags: tags.split(',').map((s) => s.trim()).filter(Boolean),
+      show_exif: showExif,
     })
     alert('Spremljeno.')
     load()
@@ -131,6 +134,10 @@ export function GalleryEdit() {
             <label>Tagovi (odvojeni zarezom)</label>
             <input className="input" value={tags} onChange={(e) => setTags(e.target.value)} />
           </div>
+        </div>
+        <div className="field" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <input type="checkbox" checked={showExif} onChange={(e) => setShowExif(e.target.checked)} />
+          <label style={{ margin: 0 }}>Prikaži EXIF podatke (kamera, objektiv, postavke)</label>
         </div>
       </div>
 

@@ -39,7 +39,7 @@ export function Nav({ pages }: { pages: PageItem[] }) {
     <header className={`nav ${scrolled ? 'scrolled' : ''}`}>
       <div className="container nav-inner">
         <NavLink to="/" className="brand">
-          <span className="brand-mark" />
+          {site.logo ? <img className="brand-logo" src={site.logo} alt={site.name} /> : <span className="brand-mark" />}
           <span>{site.name}</span>
         </NavLink>
 

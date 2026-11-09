@@ -17,6 +17,7 @@ export function GalleryDetail() {
   const [images, setImages] = useState<ImageItem[]>([])
   const [loading, setLoading] = useState(true)
   const [lightbox, setLightbox] = useState<number | null>(null)
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
 
   useEffect(() => {
     setLoading(true)
@@ -92,6 +93,13 @@ export function GalleryDetail() {
           </div>
         ) : null}
 
+        <div style={{ margin: '8px 0 28px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span className="muted" style={{ fontSize: '0.85rem' }}>Podijeli:</span>
+          <a className="tag" href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer">Facebook</a>
+          <a className="tag" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(gallery.title)}`} target="_blank" rel="noopener noreferrer">X</a>
+          <a className="tag" href={`https://wa.me/?text=${encodeURIComponent(`${gallery.title} ${shareUrl}`)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+        </div>
+
         <div className="masonry">
           {images.map((img, i) => (
             <div className="masonry-item" key={img.id}>
@@ -116,7 +124,7 @@ export function GalleryDetail() {
       </div>
 
       {lightbox !== null && images.length > 0 ? (
-        <Lightbox images={images} index={lightbox} onClose={() => setLightbox(null)} onNav={setLightbox} />
+        <Lightbox images={images} index={lightbox} showExif={gallery.show_exif} onClose={() => setLightbox(null)} onNav={setLightbox} />
       ) : null}
     </section>
   )

@@ -66,6 +66,7 @@ export interface Gallery {
   tags: string[]
   context?: string | null
   body?: string | null
+  show_exif?: boolean
   sort_order: number
   status: string
   created_at: string

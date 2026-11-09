@@ -1,6 +1,6 @@
 import type { Env } from '../types'
 
-const PRESETS = 'cinematic, editorial, minimal, noir, vibrant, lux'
+const PRESETS = 'cinematic, editorial, minimal, noir, vibrant, lux, gallery, nocturne, wander, mono, polaroid, expose, reverie'
 const FONTS = 'cormorant-inter, playfair-source, dmserif-dmsans, bodoni-jost, sora-space, fraunces-inter, anton-inter, archivo'
 
 const SYSTEM = [
