@@ -81,7 +81,7 @@ function sanitize(parsed: Record<string, any>, prompt: string): Record<string, a
 
 export async function designFromPrompt(ai: Ai, prompt: string): Promise<Record<string, any> | null> {
   try {
-    const res: any = await (ai as any).run('@cf/meta/llama-3.2-3b-instruct', {
+    const res: any = await (ai as any).run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [{ role: 'user', content: `${SYSTEM}\n\nUser request: ${prompt}` }],
       max_tokens: 300,
     })

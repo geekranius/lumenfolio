@@ -3,14 +3,12 @@ import type { Env } from '../types'
 function toBase64(bytes: Uint8Array): string {
   let binary = ''
   const chunk = 0x8000
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
-  }
+  for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
   return btoa(binary)
 }
 
 const VISION_MODEL = '@cf/meta/llama-3.2-11b-vision-instruct'
-const TEXT_MODEL = '@cf/meta/llama-3.2-3b-instruct'
+const TEXT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
 
 async function visionRun(ai: Ai, input: Record<string, unknown>): Promise<any> {
   try {
@@ -29,7 +27,7 @@ async function visionRun(ai: Ai, input: Record<string, unknown>): Promise<any> {
   }
 }
 
-async function textRun(ai: Ai, system: string, user: string, maxTokens = 350): Promise<string> {
+async function textRun(ai: Ai, system: string, user: string, maxTokens = 500): Promise<string> {
   const res: any = await (ai as any).run(TEXT_MODEL, {
     messages: [{ role: 'user', content: `${system}\n\n${user}` }],
     max_tokens: maxTokens,
@@ -38,7 +36,8 @@ async function textRun(ai: Ai, system: string, user: string, maxTokens = 350): P
 }
 
 function parseJson(text: string): Record<string, any> | null {
-  const match = text.match(/\{[\s\S]*\}/)
+  let t = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '')
+  const match = t.match(/\{[\s\S]*\}/)
   if (!match) return null
   try {
     return JSON.parse(match[0])
@@ -47,9 +46,27 @@ function parseJson(text: string): Record<string, any> | null {
   }
 }
 
-/**
- * Caption one photo. `context` (event/band/atmosphere) makes captions contextual.
- */
+// Robust parser for the plain-text format (handles multi-paragraph bodies with real newlines).
+function parseStructured(text: string): { title: string; description: string; tags: string[]; body: string } {
+  const norm = text.replace(/\r\n/g, '\n').replace(/\*\*/g, '').trim()
+  const bodyIdx = norm.search(/^\s*BODY\s*:/im)
+  const head = bodyIdx >= 0 ? norm.slice(0, bodyIdx) : norm
+  const body = bodyIdx >= 0 ? norm.slice(bodyIdx).replace(/^\s*BODY\s*:\s*/i, '').trim() : ''
+  const grab = (labels: string[]) => {
+    for (const label of labels) {
+      const m = head.match(new RegExp(`^\\s*(?:#+\\s*)?${label}\\s*[:\\-]\\s*(.+)$`, 'im'))
+      if (m) return m[1].trim().replace(/^["']|["']$/g, '')
+    }
+    return ''
+  }
+  const title = grab(['TITLE', 'NASLOV'])
+  const description = grab(['DESCRIPTION', 'OPIS', 'DESCRIPCIJA'])
+  const tagsLine = grab(['TAGS', 'TAGOVI'])
+  const tags = tagsLine.split(/[,;]/).map((s) => s.trim()).filter(Boolean).slice(0, 8)
+  return { title, description, tags, body }
+}
+
+/** Caption one photo. `context` makes captions contextual. */
 export async function captionImage(ai: Ai, bytes: Uint8Array, contentType = 'image/webp', context?: string | null): Promise<string | null> {
   try {
     const dataUri = `data:${contentType};base64,${toBase64(bytes)}`
@@ -81,62 +98,79 @@ function extractTags(texts: string[]): string[] {
       counts.set(w, (counts.get(w) ?? 0) + 1)
     }
   }
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
-    .map(([w]) => w)
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([w]) => w)
+}
+
+function trimSentence(s: string, max: number): string {
+  const t = s.replace(/\s+/g, ' ').trim()
+  if (t.length <= max) return t
+  const cut = t.slice(0, max)
+  const dot = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '))
+  return (dot > 40 ? cut.slice(0, dot + 1) : cut).trim()
 }
 
 const PLACEHOLDER_TITLES = ['nova galerija', 'untitled', 'new gallery', 'galerija']
-
 function isPlaceholderTitle(title?: string | null): boolean {
   const t = (title || '').trim().toLowerCase()
   return !t || PLACEHOLDER_TITLES.includes(t)
 }
 
+export interface GalleryText {
+  title: string
+  description: string
+  tags: string[]
+  body: string
+}
+
+const FORMAT_HINT = [
+  'Respond in EXACTLY this plain-text format (no JSON, no markdown):',
+  'TITLE: <short title, max 6 words>',
+  'DESCRIPTION: <1-2 sentences>',
+  'TAGS: tag1, tag2, tag3',
+  'BODY:',
+  '<2-3 short paragraphs about the event (atmosphere, highlights, feeling). You may use blank lines between paragraphs.>',
+].join('\n')
+
 /**
- * Generate gallery title + description + tags from image captions AND event context.
+ * Generate gallery metadata + story body from image captions and event context.
  */
 export async function galleryMeta(
   ai: Ai,
   userTitle: string,
   captions: string[],
   context?: string | null,
-): Promise<{ title: string; description: string; tags: string[] }> {
+): Promise<GalleryText> {
   const needTitle = isPlaceholderTitle(userTitle)
-  const fallbackDescription = captions.slice(0, 2).join(' ').slice(0, 320).trim()
-  const fallback = {
+  const fallbackDesc = trimSentence(captions.slice(0, 2).join(' '), 600)
+  const fallbackBody = trimSentence([context || '', captions.slice(0, 5).join(' ')].filter(Boolean).join(' '), 1600)
+  const fallback: GalleryText = {
     title: userTitle || 'Galerija',
-    description: fallbackDescription || (context ? `Fotografije: ${context.slice(0, 200)}` : ''),
+    description: fallbackDesc || (context ? context.slice(0, 200) : ''),
     tags: extractTags([...captions, context || '']),
+    body: fallbackBody,
   }
 
   try {
-    const snippet = captions.slice(0, 30).join('\n- ')
+    const snippet = captions.slice(0, 20).join('\n- ')
     const user = [
       needTitle ? 'Generate a short, evocative title (max 6 words).' : `Keep this title: "${userTitle}".`,
-      'Write a description (1-2 sentences) and 3-6 tags.',
+      'Write a description, tags, and a STORY body (2-3 short paragraphs) that tells a visitor about this event.',
       '',
       context ? `Event context: ${context}` : '',
       snippet ? `\nPhoto captions:\n- ${snippet}` : '',
       '',
-      'Respond ONLY with JSON: {"title":"...","description":"...","tags":["..."]}',
+      FORMAT_HINT,
       'Use the same language as the context/captions.',
     ].join('\n')
 
-    const text = await textRun(ai, 'You are a professional photographer writing gallery metadata.', user, 350)
-    const parsed = parseJson(text)
-    if (!parsed) return fallback
-
-    const description = String(parsed.description || '').trim()
-    const tags = Array.isArray(parsed.tags) ? parsed.tags.filter(Boolean).slice(0, 8).map(String) : []
-    const title = needTitle ? String(parsed.title || '').trim() || userTitle : userTitle
-
-    if (!description && tags.length === 0 && !title) return fallback
+    const text = await textRun(ai, 'You are a professional photographer and writer crafting portfolio text.', user, 800)
+    const s = parseStructured(text)
+    if (!s.description && !s.body && s.tags.length === 0) return fallback
     return {
-      title: title || fallback.title,
-      description: description || fallback.description,
-      tags: tags.length ? tags : fallback.tags,
+      title: (needTitle ? s.title : userTitle) || fallback.title,
+      description: s.description || fallback.description,
+      tags: s.tags.length ? s.tags : fallback.tags,
+      body: s.body || fallback.body,
     }
   } catch {
     return fallback
@@ -144,42 +178,39 @@ export async function galleryMeta(
 }
 
 /**
- * Pure text generation: event context -> title + description + tags (no images).
- * Used by the "AI sastavi tekst" button and the MCP / design tools.
+ * Pure text generation: event context -> title + description + tags + story body.
  */
-export async function galleryText(
-  ai: Ai,
-  context: string,
-  userTitle?: string | null,
-): Promise<{ title: string; description: string; tags: string[] }> {
+export async function galleryText(ai: Ai, context: string, userTitle?: string | null): Promise<GalleryText> {
   const needTitle = isPlaceholderTitle(userTitle)
   const user = [
     needTitle ? 'Generate a short, evocative title (max 6 words).' : `Keep this title: "${userTitle}".`,
-    'Write a description (1-2 sentences) capturing the event and its atmosphere, and 3-6 tags.',
+    'Write a description, tags, and a STORY body (2-3 short paragraphs) about this event: atmosphere, highlights, feeling. Warm, professional tone.',
     '',
-    `Event context provided by the photographer:\n"""${context}"""`,
+    `Event context from the photographer:\n"""${context}"""`,
     '',
-    'Respond ONLY with JSON: {"title":"...","description":"...","tags":["..."]}',
+    FORMAT_HINT,
     'Write in the same language as the context.',
   ].join('\n')
 
   try {
-    const text = await textRun(ai, 'You are a professional photographer writing gallery metadata.', user, 350)
-    const parsed = parseJson(text)
-    if (parsed) {
+    const text = await textRun(ai, 'You are a professional photographer and writer crafting portfolio text.', user, 800)
+    const s = parseStructured(text)
+    if (s.title || s.description || s.body) {
       return {
-        title: String(parsed.title || '').trim() || userTitle || 'Galerija',
-        description: String(parsed.description || '').trim(),
-        tags: Array.isArray(parsed.tags) ? parsed.tags.filter(Boolean).slice(0, 8).map(String) : [],
+        title: (needTitle ? s.title : userTitle) || userTitle || 'Galerija',
+        description: s.description,
+        tags: s.tags,
+        body: s.body,
       }
     }
   } catch {
-    /* fall through to deterministic fallback */
+    /* fall through */
   }
   return {
     title: userTitle || 'Galerija',
-    description: context.slice(0, 240),
+    description: trimSentence(context, 300),
     tags: extractTags([context]),
+    body: trimSentence(context, 1600),
   }
 }
 

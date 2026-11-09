@@ -24,6 +24,7 @@ export function Home() {
 
   const heroImage = galleries[0]?.cover || site.avatar || ''
   const totalPhotos = galleries.reduce((s, g) => s + (g.image_count || 0), 0)
+  const stories = galleries.filter((g) => g.body && g.body.trim())
 
   return (
     <>
@@ -113,12 +114,12 @@ export function Home() {
         </section>
       ) : null}
 
-      {site.showPosts && posts.length > 0 ? (
+      {site.showPosts && (stories.length > 0 || posts.length > 0) ? (
         <section className="section">
           <div className="container">
             <div className="section-head">
               <div>
-                <div className="eyebrow">Blog</div>
+                <div className="eyebrow">Priče</div>
                 <h2>{t('home.latest')}</h2>
               </div>
               <Link to="/posts" className="link-arrow">
@@ -126,20 +127,35 @@ export function Home() {
               </Link>
             </div>
             <div className="post-grid">
-              {posts.slice(0, 3).map((p) => (
-                <Link to={`/post/${p.slug}`} key={p.id} className="post-card">
-                  {p.cover ? (
-                    <div className="img-wrap">
-                      <img src={p.cover} alt="" loading="lazy" />
-                    </div>
-                  ) : null}
-                  <div className="post-card-body">
-                    <div className="date">{formatDate(p.published_at, locale)}</div>
-                    <h3>{p.title}</h3>
-                    {p.excerpt ? <p>{p.excerpt}</p> : null}
-                  </div>
-                </Link>
-              ))}
+              {stories.length > 0
+                ? stories.slice(0, 3).map((s) => (
+                    <Link to={`/gallery/${s.slug}`} key={s.id} className="post-card">
+                      {s.cover ? (
+                        <div className="img-wrap">
+                          <img src={s.cover} alt="" loading="lazy" />
+                        </div>
+                      ) : null}
+                      <div className="post-card-body">
+                        <div className="date">{formatDate(s.event_date, locale)}</div>
+                        <h3>{s.title}</h3>
+                        {s.description ? <p>{s.description}</p> : null}
+                      </div>
+                    </Link>
+                  ))
+                : posts.slice(0, 3).map((p) => (
+                    <Link to={`/post/${p.slug}`} key={p.id} className="post-card">
+                      {p.cover ? (
+                        <div className="img-wrap">
+                          <img src={p.cover} alt="" loading="lazy" />
+                        </div>
+                      ) : null}
+                      <div className="post-card-body">
+                        <div className="date">{formatDate(p.published_at, locale)}</div>
+                        <h3>{p.title}</h3>
+                        {p.excerpt ? <p>{p.excerpt}</p> : null}
+                      </div>
+                    </Link>
+                  ))}
             </div>
           </div>
         </section>

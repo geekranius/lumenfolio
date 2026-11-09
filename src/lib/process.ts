@@ -14,10 +14,10 @@ export async function processGalleryAI(env: Env, galleryId: string): Promise<voi
 
   try {
     const gallery = await env.DB.prepare(
-      'SELECT title, description, tags, cover_image_id, context FROM galleries WHERE id = ?',
+      'SELECT title, description, tags, cover_image_id, context, body FROM galleries WHERE id = ?',
     )
       .bind(galleryId)
-      .first<{ title: string; description: string | null; tags: string | null; cover_image_id: string | null; context: string | null }>()
+      .first<{ title: string; description: string | null; tags: string | null; cover_image_id: string | null; context: string | null; body: string | null }>()
 
     if (!gallery) return
     const context = gallery.context || null
@@ -60,15 +60,16 @@ export async function processGalleryAI(env: Env, galleryId: string): Promise<voi
       const meta = await galleryMeta(env.AI, gallery.title, captions, context)
       const title = meta.title && meta.title !== gallery.title ? meta.title : gallery.title
       const description = gallery.description || meta.description || null
+      const body = gallery.body || meta.body || null
       const existingTags = jsonArr(gallery.tags)
       const tags = existingTags.length ? existingTags : meta.tags ?? []
       const coverId = gallery.cover_image_id || pickCover(images.results)
 
-      if (title !== gallery.title || description || tags.length || coverId) {
+      if (title !== gallery.title || description || tags.length || coverId || body) {
         await env.DB.prepare(
-          'UPDATE galleries SET title = ?, description = ?, tags = ?, cover_image_id = ?, ai_generated = 1, updated_at = ? WHERE id = ?',
+          'UPDATE galleries SET title = ?, description = ?, body = ?, tags = ?, cover_image_id = ?, ai_generated = 1, updated_at = ? WHERE id = ?',
         )
-          .bind(title, description ?? '', JSON.stringify(tags), coverId, nowIso(), galleryId)
+          .bind(title, description ?? '', body ?? '', JSON.stringify(tags), coverId, nowIso(), galleryId)
           .run()
       }
     }

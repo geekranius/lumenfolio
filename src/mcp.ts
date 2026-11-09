@@ -243,8 +243,9 @@ async function callTool(env: Env, name: string, args: any): Promise<string> {
 
 export async function handleMcp(c: any): Promise<Response> {
   const env = c.env as Env
-  const token = getBearer(c.req.raw)
-  const authed = token && ((env.MCP_API_KEY && token === env.MCP_API_KEY) || (await verifyToken(token, env)))
+  // Accept the key via Authorization header OR ?key= / ?apiKey= query param.
+  const token = getBearer(c.req.raw) || c.req.query('key') || c.req.query('apiKey') || ''
+  const authed = Boolean(token) && ((env.MCP_API_KEY && token === env.MCP_API_KEY) || (await verifyToken(token, env)))
   if (!authed) return rpcError(null, -32001, 'Unauthorized: send Authorization: Bearer <MCP_API_KEY>')
 
   if (c.req.method === 'GET') {
@@ -264,6 +265,8 @@ export async function handleMcp(c: any): Promise<Response> {
       protocolVersion,
       capabilities: { tools: {} },
       serverInfo: { name: 'lumenfolio', version: '1.0.0' },
+      instructions:
+        'Build and manage a photographer portfolio. Use update_site for text/info, apply_design or design_from_prompt for the look (colors, fonts, layout, theme), and create_gallery/create_post/create_event/create_page for content. Then tell the user what you changed.',
     })
   }
   if (method === 'notifications/initialized' || method === 'initialized') return new Response(null, { status: 202 })

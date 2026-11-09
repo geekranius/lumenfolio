@@ -40,6 +40,7 @@ export interface Gallery {
   location: string | null
   tags: string[]
   context?: string | null
+  body?: string | null
   sort_order: number
   status: string
   created_at: string

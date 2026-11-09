@@ -6,6 +6,7 @@ import { api } from '../api'
 import { Lightbox } from '../components/Lightbox'
 import { Reveal } from '../components/Reveal'
 import { Loading } from '../components/ui'
+import { renderBody } from '../lib/render'
 import type { Gallery, ImageItem } from '../types'
 import { formatDate } from '../lib/image'
 
@@ -19,11 +20,12 @@ export function GalleryDetail() {
 
   useEffect(() => {
     setLoading(true)
+    setLightbox(null)
     api
       .get<{ gallery: Gallery; images: ImageItem[] }>(`/api/galleries/${slug}`)
       .then((d) => {
         setGallery(d.gallery)
-        setImages(d.images)
+        setImages(Array.isArray(d.images) ? d.images : [])
       })
       .catch(() => setGallery(null))
       .finally(() => setLoading(false))
@@ -33,26 +35,26 @@ export function GalleryDetail() {
   if (!gallery) {
     return (
       <div className="container section">
-        <EmptyLabel />
+        <div className="empty">Galerija nije pronađena.</div>
       </div>
     )
   }
 
   return (
-    <section className="section" style={{ paddingTop: 64 }}>
+    <section className="section" style={{ paddingTop: 48 }}>
       <div className="container">
         <Link to="/galleries" className="btn btn-ghost btn-sm" style={{ marginBottom: 28 }}>
           <ArrowLeft size={15} /> {t('gallery.backToGalleries')}
         </Link>
 
-        <div className="section-head" style={{ marginBottom: 16 }}>
+        <div className="section-head" style={{ marginBottom: 14 }}>
           <div>
             <div className="eyebrow">Galerija</div>
-            <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.6rem)' }}>{gallery.title}</h1>
+            <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)' }}>{gallery.title}</h1>
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 8 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 10 }}>
           {gallery.event_date ? (
             <span className="muted" style={{ display: 'inline-flex', gap: 7, alignItems: 'center', fontSize: '0.92rem' }}>
               <Calendar size={16} /> {formatDate(gallery.event_date, locale)}
@@ -69,13 +71,13 @@ export function GalleryDetail() {
         </div>
 
         {gallery.description ? (
-          <p className="muted" style={{ maxWidth: 640, marginTop: 12, fontSize: '1.05rem' }}>
+          <p className="muted" style={{ maxWidth: 720, fontSize: '1.08rem' }}>
             {gallery.description}
           </p>
         ) : null}
 
         {gallery.tags?.length ? (
-          <div style={{ margin: '18px 0 8px' }}>
+          <div style={{ margin: '16px 0 8px' }}>
             {gallery.tags.map((tg) => (
               <span className="tag" key={tg}>
                 {tg}
@@ -84,12 +86,26 @@ export function GalleryDetail() {
           </div>
         ) : null}
 
-        <div className="masonry" style={{ marginTop: 28 }}>
+        {gallery.body ? (
+          <div className="prose" style={{ margin: '28px 0 40px' }}>
+            {renderBody(gallery.body)}
+          </div>
+        ) : null}
+
+        <div className="masonry">
           {images.map((img, i) => (
             <div className="masonry-item" key={img.id}>
               <Reveal delay={(i % 4) * 30}>
                 <div className="photo-tile" onClick={() => setLightbox(i)}>
-                  <img src={img.src} srcSet={img.srcset} sizes="(max-width: 640px) 100vw, 33vw" alt={img.alt || img.caption || ''} loading="lazy" />
+                  <img
+                    src={img.src}
+                    srcSet={img.srcset}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1100px) 50vw, 25vw"
+                    width={img.width || undefined}
+                    height={img.height || undefined}
+                    alt={img.alt || img.caption || ''}
+                    loading={i < 8 ? 'eager' : 'lazy'}
+                  />
                   <div className="shade" />
                   <div className="zoom">+</div>
                 </div>
@@ -104,8 +120,4 @@ export function GalleryDetail() {
       ) : null}
     </section>
   )
-}
-
-function EmptyLabel() {
-  return <div className="empty">Galerija nije pronađena.</div>
 }

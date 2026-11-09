@@ -63,14 +63,15 @@ app.post('/admin', requireAdmin, async (c) => {
     slug = `${baseSlug}-${n++}`
   }
   await c.env.DB.prepare(
-    `INSERT INTO galleries (id, slug, title, description, event_date, event_end_date, location, tags, context, sort_order, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO galleries (id, slug, title, description, body, event_date, event_end_date, location, tags, context, sort_order, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
     .bind(
       id,
       slug,
       title,
       body.description ?? null,
+      body.body ?? null,
       body.event_date ?? null,
       body.event_end_date ?? null,
       body.location ?? null,
@@ -102,11 +103,13 @@ app.put('/admin/:id', requireAdmin, async (c) => {
   if (!existing) return json({ error: 'Nije pronađeno.' }, 404)
 
   await c.env.DB.prepare(
-    `UPDATE galleries SET title = ?, description = ?, event_date = ?, event_end_date = ?, location = ?, tags = ?, sort_order = ?, status = ?, updated_at = ? WHERE id = ?`,
+    `UPDATE galleries SET title = ?, description = ?, body = ?, context = ?, event_date = ?, event_end_date = ?, location = ?, tags = ?, sort_order = ?, status = ?, updated_at = ? WHERE id = ?`,
   )
     .bind(
       body.title ?? existing.title,
       body.description ?? existing.description,
+      body.body ?? existing.body ?? null,
+      body.context ?? existing.context ?? null,
       body.event_date ?? existing.event_date,
       body.event_end_date ?? existing.event_end_date,
       body.location ?? existing.location,

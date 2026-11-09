@@ -12,6 +12,7 @@ export function Upload() {
   const [files, setFiles] = useState<File[]>([])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [body, setBody] = useState('')
   const [context, setContext] = useState('')
   const [eventDate, setEventDate] = useState('')
   const [location, setLocation] = useState('')
@@ -47,12 +48,13 @@ export function Upload() {
     setAiBusy(true)
     setAiMsg('')
     try {
-      const r = await api.post<{ title: string; description: string; tags: string[] }>('/api/galleries/admin/ai-text', {
+      const r = await api.post<{ title: string; description: string; tags: string[]; body: string }>('/api/galleries/admin/ai-text', {
         context,
         title: title || null,
       })
       setTitle((prev) => prev || r.title)
       setDescription(r.description)
+      setBody(r.body || '')
       setAiMsg(`✨ AI je sastavio: „${r.title}” · tagovi: ${r.tags.slice(0, 5).join(', ')}`)
     } catch (e: any) {
       setAiMsg(e.message || 'AI nije uspio sastaviti tekst.')
@@ -70,6 +72,7 @@ export function Upload() {
       const gallery = await api.post<{ id: string; slug: string }>('/api/galleries/admin', {
         title: title || 'Nova galerija',
         description: description || null,
+        body: body || null,
         context: context || null,
         event_date: eventDate || null,
         location: location || null,
@@ -170,6 +173,10 @@ export function Upload() {
         <div className="field">
           <label>Opis (ostavi prazno pa će AI napisati)</label>
           <textarea className="textarea" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
+        </div>
+        <div className="field">
+          <label>Priča / tekst objave (AI može napisati 2-3 odlomka)</label>
+          <textarea className="textarea" value={body} onChange={(e) => setBody(e.target.value)} rows={4} placeholder="AI će iz konteksta napisati priču o događaju — ili uredi ručno." />
         </div>
         <div className="field">
           <label>Lokacija</label>
