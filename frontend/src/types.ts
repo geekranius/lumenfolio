@@ -26,6 +26,7 @@ export interface SiteSettings {
   seo: { title: string; description: string; image: string; keywords: string }
   showCalendar: boolean
   showPosts: boolean
+  design: import('./lib/design').DesignConfig
 }
 
 export interface Gallery {
@@ -38,6 +39,7 @@ export interface Gallery {
   event_end_date: string | null
   location: string | null
   tags: string[]
+  context?: string | null
   sort_order: number
   status: string
   created_at: string

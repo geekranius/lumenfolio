@@ -6,6 +6,7 @@ export interface Env {
   ADMIN_PASSWORD: string
   ADMIN_JWT_SECRET: string
   RAPIDRAW_API_KEY?: string
+  MCP_API_KEY?: string
   SITE_ID?: string
   ENABLE_AI?: string
   DEFAULT_LOCALE?: string
@@ -50,6 +51,7 @@ export interface SiteSettings {
   }
   showCalendar: boolean
   showPosts: boolean
+  design: Record<string, any>
 }
 
 export interface Gallery {
@@ -62,6 +64,7 @@ export interface Gallery {
   event_end_date: string | null
   location: string | null
   tags: string[]
+  context?: string | null
   sort_order: number
   status: string
   created_at: string

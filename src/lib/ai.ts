@@ -9,8 +9,6 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(binary)
 }
 
-// Vision captioning: Meta Llama 3.2 11B Vision (built-in, free tier).
-// Requires a one-time license acceptance per account; handled automatically.
 const VISION_MODEL = '@cf/meta/llama-3.2-11b-vision-instruct'
 const TEXT_MODEL = '@cf/meta/llama-3.2-3b-instruct'
 
@@ -23,7 +21,7 @@ async function visionRun(ai: Ai, input: Record<string, unknown>): Promise<any> {
       try {
         await (ai as any).run(VISION_MODEL, { prompt: 'agree' })
       } catch {
-        /* acceptance returns a confirmation "error"; ignore it */
+        /* acceptance confirmation */
       }
       return await (ai as any).run(VISION_MODEL, input)
     }
@@ -31,20 +29,34 @@ async function visionRun(ai: Ai, input: Record<string, unknown>): Promise<any> {
   }
 }
 
+async function textRun(ai: Ai, system: string, user: string, maxTokens = 350): Promise<string> {
+  const res: any = await (ai as any).run(TEXT_MODEL, {
+    messages: [{ role: 'user', content: `${system}\n\n${user}` }],
+    max_tokens: maxTokens,
+  })
+  return (res?.response ?? res?.choices?.[0]?.message?.content ?? '').trim()
+}
+
+function parseJson(text: string): Record<string, any> | null {
+  const match = text.match(/\{[\s\S]*\}/)
+  if (!match) return null
+  try {
+    return JSON.parse(match[0])
+  } catch {
+    return null
+  }
+}
+
 /**
- * Generate a caption for an image using Llama 3.2 Vision.
- * `contentType` must match the actual bytes (WebP for normal uploads, JPEG for
- * rapidraw) so the model can decode the image.
+ * Caption one photo. `context` (event/band/atmosphere) makes captions contextual.
  */
-export async function captionImage(ai: Ai, bytes: Uint8Array, contentType = 'image/webp'): Promise<string | null> {
+export async function captionImage(ai: Ai, bytes: Uint8Array, contentType = 'image/webp', context?: string | null): Promise<string | null> {
   try {
     const dataUri = `data:${contentType};base64,${toBase64(bytes)}`
-    const res: any = await visionRun(ai, {
-      prompt:
-        'Describe this photo in one clear, concise sentence. Mention the main subject, setting and mood. Do not say that it is an image.',
-      image: dataUri,
-      max_tokens: 120,
-    })
+    const prompt = context
+      ? `This photo is from this event: ${context}. Describe THIS specific photo in one concise, evocative sentence (who/what is in the frame, the moment, the mood). Do not mention that it is a photo.`
+      : 'Describe this photo in one clear, concise sentence. Mention the main subject, setting and mood. Do not say that it is an image.'
+    const res: any = await visionRun(ai, { prompt, image: dataUri, max_tokens: 120 })
     const text = res?.response ?? res?.choices?.[0]?.message?.content ?? res?.description
     return typeof text === 'string' && text.trim() ? text.trim() : null
   } catch {
@@ -52,23 +64,17 @@ export async function captionImage(ai: Ai, bytes: Uint8Array, contentType = 'ima
   }
 }
 
-/**
- * Per-image tags. Object detection (DETR) is too noisy for photography, so we
- * keep this empty and derive meaningful tags at the gallery level from captions.
- */
 export async function tagImage(_ai: Ai, _bytes: Uint8Array): Promise<string[]> {
   return []
 }
 
 const STOPWORDS = new Set(
-  'the and with that this from into over under while which their there where these those image photo photograph appears depicts depicting shows showing very more some such have has are was were will would could should about above after before below between during through against because being been also onto just only than then them they his her its our your a an of in on at to for by is it as be or we you he she'.split(
-    /\s+/,
-  ),
+  'the and with that this from into over under while which their there where these those image photo photograph appears depicts depicting shows showing very more some such have has are was were will would could should about above after before below between during through against because being been also onto just only than then them they his her its our your a an of in on at to for by is it as be or we you he she'.split(/\s+/),
 )
 
-function extractTags(captions: string[]): string[] {
+function extractTags(texts: string[]): string[] {
   const counts = new Map<string, number>()
-  for (const c of captions) {
+  for (const c of texts) {
     for (const raw of c.toLowerCase().split(/[^a-zà-ž0-9]+/i)) {
       const w = raw.trim()
       if (w.length < 4 || STOPWORDS.has(w)) continue
@@ -81,53 +87,54 @@ function extractTags(captions: string[]): string[] {
     .map(([w]) => w)
 }
 
+const PLACEHOLDER_TITLES = ['nova galerija', 'untitled', 'new gallery', 'galerija']
+
+function isPlaceholderTitle(title?: string | null): boolean {
+  const t = (title || '').trim().toLowerCase()
+  return !t || PLACEHOLDER_TITLES.includes(t)
+}
+
 /**
- * Derive gallery metadata (description, tags) from the AI captions using an LLM,
- * with a deterministic fallback so the fields are never left empty.
+ * Generate gallery title + description + tags from image captions AND event context.
  */
 export async function galleryMeta(
   ai: Ai,
   userTitle: string,
   captions: string[],
+  context?: string | null,
 ): Promise<{ title: string; description: string; tags: string[] }> {
+  const needTitle = isPlaceholderTitle(userTitle)
+  const fallbackDescription = captions.slice(0, 2).join(' ').slice(0, 320).trim()
   const fallback = {
-    title: userTitle,
-    description: captions.slice(0, 2).join(' ').slice(0, 320).trim(),
-    tags: extractTags(captions),
+    title: userTitle || 'Galerija',
+    description: fallbackDescription || (context ? `Fotografije: ${context.slice(0, 200)}` : ''),
+    tags: extractTags([...captions, context || '']),
   }
 
   try {
     const snippet = captions.slice(0, 30).join('\n- ')
-    const prompt = [
-      'You are helping a professional photographer write portfolio metadata.',
-      'Based on the image captions below, write a description and tags.',
+    const user = [
+      needTitle ? 'Generate a short, evocative title (max 6 words).' : `Keep this title: "${userTitle}".`,
+      'Write a description (1-2 sentences) and 3-6 tags.',
       '',
-      `Working title: ${userTitle || '(none)'}`,
+      context ? `Event context: ${context}` : '',
+      snippet ? `\nPhoto captions:\n- ${snippet}` : '',
       '',
-      'Image captions:',
-      `- ${snippet}`,
-      '',
-      'Respond ONLY with valid JSON, no markdown, in this exact shape:',
-      '{"description":"1-2 sentences","tags":["tag1","tag2","tag3"]}',
-      'Use the same language as the captions.',
+      'Respond ONLY with JSON: {"title":"...","description":"...","tags":["..."]}',
+      'Use the same language as the context/captions.',
     ].join('\n')
 
-    const res: any = await (ai as any).run(TEXT_MODEL, {
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 350,
-    })
+    const text = await textRun(ai, 'You are a professional photographer writing gallery metadata.', user, 350)
+    const parsed = parseJson(text)
+    if (!parsed) return fallback
 
-    const text: string = (res?.response ?? res?.choices?.[0]?.message?.content ?? '').trim()
-    const match = text.match(/\{[\s\S]*\}/)
-    if (!match) return fallback
-
-    const parsed = JSON.parse(match[0])
     const description = String(parsed.description || '').trim()
     const tags = Array.isArray(parsed.tags) ? parsed.tags.filter(Boolean).slice(0, 8).map(String) : []
+    const title = needTitle ? String(parsed.title || '').trim() || userTitle : userTitle
 
-    if (!description && tags.length === 0) return fallback
+    if (!description && tags.length === 0 && !title) return fallback
     return {
-      title: userTitle,
+      title: title || fallback.title,
       description: description || fallback.description,
       tags: tags.length ? tags : fallback.tags,
     }
@@ -137,8 +144,45 @@ export async function galleryMeta(
 }
 
 /**
- * Derive a single "best cover" image id. Prefer large landscape images.
+ * Pure text generation: event context -> title + description + tags (no images).
+ * Used by the "AI sastavi tekst" button and the MCP / design tools.
  */
+export async function galleryText(
+  ai: Ai,
+  context: string,
+  userTitle?: string | null,
+): Promise<{ title: string; description: string; tags: string[] }> {
+  const needTitle = isPlaceholderTitle(userTitle)
+  const user = [
+    needTitle ? 'Generate a short, evocative title (max 6 words).' : `Keep this title: "${userTitle}".`,
+    'Write a description (1-2 sentences) capturing the event and its atmosphere, and 3-6 tags.',
+    '',
+    `Event context provided by the photographer:\n"""${context}"""`,
+    '',
+    'Respond ONLY with JSON: {"title":"...","description":"...","tags":["..."]}',
+    'Write in the same language as the context.',
+  ].join('\n')
+
+  try {
+    const text = await textRun(ai, 'You are a professional photographer writing gallery metadata.', user, 350)
+    const parsed = parseJson(text)
+    if (parsed) {
+      return {
+        title: String(parsed.title || '').trim() || userTitle || 'Galerija',
+        description: String(parsed.description || '').trim(),
+        tags: Array.isArray(parsed.tags) ? parsed.tags.filter(Boolean).slice(0, 8).map(String) : [],
+      }
+    }
+  } catch {
+    /* fall through to deterministic fallback */
+  }
+  return {
+    title: userTitle || 'Galerija',
+    description: context.slice(0, 240),
+    tags: extractTags([context]),
+  }
+}
+
 export function pickCover(images: Array<{ id: string; width?: number | null; height?: number | null }>): string | null {
   if (images.length === 0) return null
   const scored = images
@@ -146,8 +190,7 @@ export function pickCover(images: Array<{ id: string; width?: number | null; hei
     .map((i) => {
       const w = i.width as number
       const h = i.height as number
-      const ratio = w / h
-      const landscapeBonus = ratio >= 1 ? 1 : 0.7
+      const landscapeBonus = w / h >= 1 ? 1 : 0.7
       return { id: i.id, score: w * h * landscapeBonus }
     })
     .sort((a, b) => b.score - a.score)

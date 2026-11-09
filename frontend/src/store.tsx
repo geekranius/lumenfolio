@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { api } from './api'
 import { tr, type Locale } from './i18n'
+import { DEFAULT_DESIGN, applyDesign } from './lib/design'
 import type { SiteSettings } from './types'
 
 export const defaultSite: SiteSettings = {
@@ -19,6 +20,7 @@ export const defaultSite: SiteSettings = {
   seo: { title: '', description: '', image: '', keywords: '' },
   showCalendar: true,
   showPosts: true,
+  design: DEFAULT_DESIGN,
 }
 
 interface SiteContextValue {
@@ -39,13 +41,6 @@ const SiteContext = createContext<SiteContextValue>({
   locale: 'hr',
 })
 
-function resolveTheme(theme: SiteSettings['theme']): 'dark' | 'light' {
-  if (theme === 'auto') {
-    return typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
-  }
-  return theme
-}
-
 export function SiteProvider({ children }: { children: ReactNode }) {
   const [site, setSiteState] = useState<SiteSettings>(defaultSite)
   const [loading, setLoading] = useState(true)
@@ -53,7 +48,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
   const reload = useCallback(async () => {
     try {
       const s = await api.get<SiteSettings>('/api/site')
-      setSiteState({ ...defaultSite, ...s })
+      setSiteState({ ...defaultSite, ...s, design: { ...DEFAULT_DESIGN, ...(s.design || {}) } })
     } catch {
       /* keep defaults */
     } finally {
@@ -66,15 +61,11 @@ export function SiteProvider({ children }: { children: ReactNode }) {
   }, [reload])
 
   useEffect(() => {
-    const root = document.documentElement
-    root.setAttribute('data-theme', resolveTheme(site.theme))
-    root.style.setProperty('--accent', site.accent || defaultSite.accent)
-    root.setAttribute('lang', site.locale || 'hr')
+    applyDesign(site.design)
     if (site.name) document.title = site.seo.title || `${site.name} — ${site.tagline}`
   }, [site])
 
   const t = useCallback((key: string) => tr(site.locale, key), [site.locale])
-
   const setSite = useCallback((s: SiteSettings) => setSiteState(s), [])
 
   return (

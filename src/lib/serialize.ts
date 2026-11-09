@@ -12,6 +12,7 @@ export interface GalleryRow {
   event_end_date: string | null
   location: string | null
   tags: string | null
+  context?: string | null
   sort_order: number
   status: string
   created_at: string
@@ -29,6 +30,7 @@ export function mapGallery(env: Env, row: GalleryRow): Gallery {
     event_end_date: row.event_end_date,
     location: row.location,
     tags: jsonArr(row.tags),
+    context: row.context ?? null,
     sort_order: row.sort_order,
     status: row.status,
     created_at: row.created_at,

@@ -5,6 +5,7 @@ import { json, err, slugify, uuid, nowIso, jsonArr } from '../lib/helpers'
 import { mapGallery, mapImage, type GalleryRow, type ImageRow } from '../lib/serialize'
 import { deleteObjectPrefix } from '../lib/r2'
 import { processGalleryAI } from '../lib/process'
+import { galleryText } from '../lib/ai'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -52,27 +53,29 @@ app.get('/admin/all', requireAdmin, async (c) => {
 
 app.post('/admin', requireAdmin, async (c) => {
   const body = await c.req.json().catch(() => null)
-  if (!body?.title) return err('Naslov je obavezan.', 400)
+  if (!body) return err('Invalid body', 400)
+  const title = body.title || 'Nova galerija'
   const id = uuid()
-  const baseSlug = slugify(body.slug || body.title)
+  const baseSlug = slugify(body.slug || body.title || body.context || 'galerija')
   let slug = baseSlug
   let n = 1
   while (await c.env.DB.prepare('SELECT id FROM galleries WHERE slug = ?').bind(slug).first()) {
     slug = `${baseSlug}-${n++}`
   }
   await c.env.DB.prepare(
-    `INSERT INTO galleries (id, slug, title, description, event_date, event_end_date, location, tags, sort_order, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO galleries (id, slug, title, description, event_date, event_end_date, location, tags, context, sort_order, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
     .bind(
       id,
       slug,
-      body.title,
+      title,
       body.description ?? null,
       body.event_date ?? null,
       body.event_end_date ?? null,
       body.location ?? null,
       JSON.stringify(Array.isArray(body.tags) ? body.tags : []),
+      body.context ?? null,
       body.sort_order ?? 0,
       body.status ?? 'published',
       nowIso(),
@@ -80,6 +83,15 @@ app.post('/admin', requireAdmin, async (c) => {
     .run()
   const row = await c.env.DB.prepare('SELECT * FROM galleries WHERE id = ?').bind(id).first<GalleryRow>()
   return json(mapGallery(c.env, row!), 201)
+})
+
+// Natural-language event context -> title + description + tags (no images).
+app.post('/admin/ai-text', requireAdmin, async (c) => {
+  const body = await c.req.json().catch(() => null)
+  const context = String(body?.context || '').trim()
+  if (!context) return err('Napiši kontekst (bend, datum, pjesme, atmosfera…).', 400)
+  const result = await galleryText(c.env.AI, context, body?.title || null)
+  return json(result)
 })
 
 app.put('/admin/:id', requireAdmin, async (c) => {

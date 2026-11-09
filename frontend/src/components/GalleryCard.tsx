@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { ArrowUpRight } from 'lucide-react'
 import type { Gallery } from '../types'
 import { formatDate } from '../lib/image'
 
@@ -12,6 +13,9 @@ export function GalleryCard({ gallery, locale }: { gallery: Gallery; locale: str
         <div style={{ aspectRatio: '3/4', background: 'var(--surface-2)' }} />
       )}
       <div className="gallery-card-overlay">
+        <span className="arrow">
+          <ArrowUpRight size={18} />
+        </span>
         <div className="title">{gallery.title}</div>
         <div className="meta">
           {formatDate(gallery.event_date, locale)}

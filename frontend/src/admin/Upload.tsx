@@ -1,6 +1,6 @@
 import { useRef, useState, type DragEvent, type ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { FolderOpen, Upload as UploadIcon, Sparkles, X } from 'lucide-react'
+import { FolderOpen, Upload as UploadIcon, Sparkles, X, Wand2 } from 'lucide-react'
 import { useSite } from '../store'
 import { api } from '../api'
 import { prepareImage, SUPPORTED_TYPES } from '../lib/image'
@@ -12,9 +12,12 @@ export function Upload() {
   const [files, setFiles] = useState<File[]>([])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [context, setContext] = useState('')
   const [eventDate, setEventDate] = useState('')
   const [location, setLocation] = useState('')
 
+  const [aiBusy, setAiBusy] = useState(false)
+  const [aiMsg, setAiMsg] = useState('')
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState('')
@@ -38,6 +41,26 @@ export function Upload() {
 
   const remove = (i: number) => setFiles((prev) => prev.filter((_, idx) => idx !== i))
 
+  // AI napiše naslov + opis + tagove iz konteksta (bend, datum, pjesme, atmosfera…).
+  const aiDraft = async () => {
+    if (!context.trim()) return setAiMsg('Prvo napiši kontekst pa klikni ponovno.')
+    setAiBusy(true)
+    setAiMsg('')
+    try {
+      const r = await api.post<{ title: string; description: string; tags: string[] }>('/api/galleries/admin/ai-text', {
+        context,
+        title: title || null,
+      })
+      setTitle((prev) => prev || r.title)
+      setDescription(r.description)
+      setAiMsg(`✨ AI je sastavio: „${r.title}” · tagovi: ${r.tags.slice(0, 5).join(', ')}`)
+    } catch (e: any) {
+      setAiMsg(e.message || 'AI nije uspio sastaviti tekst.')
+    } finally {
+      setAiBusy(false)
+    }
+  }
+
   const publish = async () => {
     setBusy(true)
     setError('')
@@ -47,13 +70,13 @@ export function Upload() {
       const gallery = await api.post<{ id: string; slug: string }>('/api/galleries/admin', {
         title: title || 'Nova galerija',
         description: description || null,
+        context: context || null,
         event_date: eventDate || null,
         location: location || null,
       })
       const galleryId = gallery.id
 
       const meta: Array<{ id: string; width: number; height: number; variants: number[] }> = []
-      let skipped = 0
       for (let i = 0; i < files.length; i++) {
         const f = files[i]
         setStatus(`Obrađujem ${i + 1}/${files.length}: ${f.name}`)
@@ -64,7 +87,7 @@ export function Upload() {
           }
           meta.push({ id: p.id, width: p.width, height: p.height, variants: p.variants })
         } catch {
-          skipped++
+          /* skip unreadable file */
         }
         setProgress(Math.round(((i + 1) / files.length) * 100))
       }
@@ -91,7 +114,7 @@ export function Upload() {
           <div className="eyebrow">Objavljeno</div>
           <h2 style={{ fontSize: '2rem', margin: '12px 0 8px' }}>{result.count} fotografija</h2>
           <p className="muted">
-            AI sada u pozadini opisuje fotografije, dodaje tagove i predlaže naslov i naslovnu sliku. Pričekajte minutu pa
+            AI sada u pozadini opisuje fotografije, sastavlja opis i tagove i bira naslovnu sliku. Pričekajte minutu pa
             osvježite galeriju.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 24, flexWrap: 'wrap' }}>
@@ -117,10 +140,27 @@ export function Upload() {
       </div>
 
       <div className="panel">
+        <div className="field">
+          <label>Opiši događaj / fotografije (AI iz ovoga sastavi tekst)</label>
+          <textarea
+            className="textarea"
+            value={context}
+            onChange={(e) => setContext(e.target.value)}
+            rows={3}
+            placeholder="Npr. „Koncert benda The Catch 22s u klubu BBF 16.10.2026. Svirali su stare hitove, publika je pjevala, atmosfera je bila energična i dimna…“"
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+            <button className="btn btn-ghost btn-sm" onClick={aiDraft} disabled={aiBusy || !context.trim()}>
+              <Wand2 size={15} /> {aiBusy ? 'Sastavljam…' : '✨ AI sastavi naslov, opis i tagove'}
+            </button>
+          </div>
+          {aiMsg ? <div className="hint" style={{ marginTop: 8, color: 'var(--accent)' }}>{aiMsg}</div> : null}
+        </div>
+
         <div className="row">
           <div className="field">
-            <label>Naziv (npr. ime koncerta, teme…) *</label>
-            <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Koncert XYZ" />
+            <label>Naslov (opcionalno — AI može predložiti)</label>
+            <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="npr. The Catch 22s — BBF" />
           </div>
           <div className="field">
             <label>Datum događaja</label>
@@ -128,7 +168,7 @@ export function Upload() {
           </div>
         </div>
         <div className="field">
-          <label>Opis (opcionalno — AI može predložiti)</label>
+          <label>Opis (ostavi prazno pa će AI napisati)</label>
           <textarea className="textarea" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
         </div>
         <div className="field">

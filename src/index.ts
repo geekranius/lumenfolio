@@ -4,6 +4,7 @@ import type { Env } from './types'
 import api from './api'
 import { serveObject } from './lib/r2'
 import { getSite } from './lib/site'
+import { handleMcp } from './mcp'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -17,6 +18,9 @@ app.get('/files/*', async (c) => {
   const key = c.req.path.replace(/^\/files\//, '')
   return serveObject(c.env, key)
 })
+
+// MCP server (Model Context Protocol) — connect external AI tools.
+app.all('/mcp', (c) => handleMcp(c))
 
 // Static assets (js/css/fonts/etc.) + SPA navigation with server-rendered meta tags.
 app.all('*', async (c) => {

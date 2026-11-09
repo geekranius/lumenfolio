@@ -1,5 +1,5 @@
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Upload, Images, CalendarDays, FileText, File, Settings, LogOut, ExternalLink } from 'lucide-react'
+import { LayoutDashboard, Upload, Images, CalendarDays, FileText, File, Settings, LogOut, ExternalLink, Palette, Bot } from 'lucide-react'
 import { auth } from '../api'
 import { useSite } from '../store'
 
@@ -19,6 +19,8 @@ export function AdminLayout() {
     { to: '/admin/events', icon: CalendarDays, label: t('admin.events') },
     { to: '/admin/posts', icon: FileText, label: t('admin.posts') },
     { to: '/admin/pages', icon: File, label: t('admin.pages') },
+    { to: '/admin/design', icon: Palette, label: 'Dizajn' },
+    { to: '/admin/mcp', icon: Bot, label: 'MCP' },
     { to: '/admin/settings', icon: Settings, label: t('admin.settings') },
   ]
 

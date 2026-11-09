@@ -33,46 +33,57 @@ export function Lightbox({
 
   return (
     <div className="lightbox" onClick={onClose}>
-      <img
-        src={img.full}
-        alt={img.alt || img.caption || ''}
-        onClick={(e) => e.stopPropagation()}
-      />
-      <div className="lightbox-controls">
-        <button className="lb-btn lb-close" onClick={onClose} aria-label="Zatvori">
-          <X size={22} />
-        </button>
-        {images.length > 1 && (
-          <>
-            <button
-              className="lb-btn lb-prev"
-              onClick={(e) => {
-                e.stopPropagation()
-                onNav((index - 1 + images.length) % images.length)
-              }}
-              aria-label="Prethodna"
-            >
-              <ChevronLeft size={26} />
-            </button>
-            <button
-              className="lb-btn lb-next"
-              onClick={(e) => {
-                e.stopPropagation()
-                onNav((index + 1) % images.length)
-              }}
-              aria-label="Sljedeća"
-            >
-              <ChevronRight size={26} />
-            </button>
-          </>
-        )}
-        <div className="lb-caption">
-          {img.caption ? <div className="cap">{img.caption}</div> : null}
-          <div className="count">
-            {index + 1} / {images.length}
-          </div>
+      <img className="lb-img" src={img.full} alt={img.alt || img.caption || ''} onClick={(e) => e.stopPropagation()} />
+
+      <button className="lb-btn lb-close" onClick={onClose} aria-label="Zatvori">
+        <X size={22} />
+      </button>
+      {images.length > 1 && (
+        <>
+          <button
+            className="lb-btn lb-prev"
+            onClick={(e) => {
+              e.stopPropagation()
+              onNav((index - 1 + images.length) % images.length)
+            }}
+            aria-label="Prethodna"
+          >
+            <ChevronLeft size={26} />
+          </button>
+          <button
+            className="lb-btn lb-next"
+            onClick={(e) => {
+              e.stopPropagation()
+              onNav((index + 1) % images.length)
+            }}
+            aria-label="Sljedeća"
+          >
+            <ChevronRight size={26} />
+          </button>
+        </>
+      )}
+
+      <div className="lb-caption">
+        {img.caption ? <div className="cap">{img.caption}</div> : null}
+        <div className="count">
+          {index + 1} / {images.length}
         </div>
       </div>
+
+      {images.length > 1 ? (
+        <div className="lb-thumbs" onClick={(e) => e.stopPropagation()}>
+          {images.map((im, i) => (
+            <img
+              key={im.id}
+              className={`lb-thumb ${i === index ? 'active' : ''}`}
+              src={im.placeholder}
+              alt=""
+              loading="lazy"
+              onClick={() => onNav(i)}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }

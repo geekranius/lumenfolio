@@ -23,6 +23,8 @@ import { PostsAdmin } from './admin/PostsAdmin'
 import { PostEdit } from './admin/PostEdit'
 import { PagesAdmin } from './admin/PagesAdmin'
 import { Settings } from './admin/Settings'
+import { Design } from './admin/Design'
+import { Mcp } from './admin/Mcp'
 
 export default function App() {
   return (
@@ -60,6 +62,8 @@ export default function App() {
             <Route path="posts/:id" element={<PostEdit />} />
             <Route path="pages" element={<PagesAdmin />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="design" element={<Design />} />
+            <Route path="mcp" element={<Mcp />} />
           </Route>
         </Routes>
       </BrowserRouter>

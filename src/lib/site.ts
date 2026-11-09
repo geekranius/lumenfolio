@@ -17,6 +17,18 @@ export const DEFAULT_SITE: SiteSettings = {
   seo: { title: '', description: '', image: '', keywords: '' },
   showCalendar: true,
   showPosts: true,
+  design: {
+    preset: 'cinematic',
+    mode: 'dark',
+    accent: '#c8a24a',
+    fontPair: 'cormorant-inter',
+    layout: 'masonry',
+    hero: 'cinematic',
+    radius: 14,
+    animations: true,
+    grain: true,
+    headingCase: 'normal',
+  },
 }
 
 export async function getSite(env: Env): Promise<SiteSettings> {
