@@ -4,6 +4,7 @@ import { useSite } from '../store'
 import { api } from '../api'
 import { Reveal } from '../components/Reveal'
 import { Loading, Empty } from '../components/ui'
+import { SignalPageHeader } from '../components/SignalPageHeader'
 import type { Gallery, Post } from '../types'
 import { formatDate } from '../lib/image'
 
@@ -28,51 +29,43 @@ export function Posts() {
   const useStories = stories.length > 0
 
   return (
-    <section className="section" style={{ paddingTop: 48 }}>
+    <section className="signal-subpage signal-posts-page section">
       <div className="container">
-        <div className="section-head">
-          <div>
-            <div className="eyebrow">Priče</div>
-            <h2>{t('nav.posts')}</h2>
-          </div>
-        </div>
+        <SignalPageHeader
+          code="NOTES / 04"
+          label={locale === 'en' ? 'Field notes' : 'Terenske bilješke'}
+          title={t('nav.posts')}
+          description={locale === 'en' ? 'Stories attached to the music, the people, and the rooms.' : 'Priče uz glazbu, ljude i prostore.'}
+        />
 
         {loading ? (
           <Loading />
         ) : useStories ? (
-          <div className="post-grid">
+          <div className="signal-story-grid">
             {stories.map((s, i) => (
               <Reveal key={s.id} delay={(i % 3) * 40}>
-                <Link to={`/gallery/${s.slug}`} className="post-card">
-                  {s.cover ? (
-                    <div className="img-wrap">
-                      <img src={s.cover} alt={s.title} loading="lazy" />
-                    </div>
-                  ) : null}
-                  <div className="post-card-body">
-                    <div className="date">{formatDate(s.event_date, locale)}</div>
-                    <h3>{s.title}</h3>
-                    {s.description ? <p>{s.description}</p> : null}
-                  </div>
+                <Link to={`/gallery/${s.slug}`} className="signal-story">
+                  <span className="signal-story-index">0{i + 1} / FIELD NOTE</span>
+                  {s.cover ? <img src={s.cover} alt={s.title} loading="lazy" /> : null}
+                  <span className="signal-story-date">{formatDate(s.event_date, locale)}</span>
+                  <strong>{s.title}</strong>
+                  {s.description ? <span className="signal-story-description">{s.description}</span> : null}
+                  <span className="signal-story-link">{locale === 'en' ? 'OPEN STORY' : 'OTVORI PRIČU'}</span>
                 </Link>
               </Reveal>
             ))}
           </div>
         ) : posts.length ? (
-          <div className="post-grid">
+          <div className="signal-story-grid">
             {posts.map((p, i) => (
               <Reveal key={p.id} delay={(i % 3) * 40}>
-                <Link to={`/post/${p.slug}`} className="post-card">
-                  {p.cover ? (
-                    <div className="img-wrap">
-                      <img src={p.cover} alt={p.title} loading="lazy" />
-                    </div>
-                  ) : null}
-                  <div className="post-card-body">
-                    <div className="date">{formatDate(p.published_at, locale)}</div>
-                    <h3>{p.title}</h3>
-                    {p.excerpt ? <p>{p.excerpt}</p> : null}
-                  </div>
+                <Link to={`/post/${p.slug}`} className="signal-story">
+                  <span className="signal-story-index">0{i + 1} / FIELD NOTE</span>
+                  {p.cover ? <img src={p.cover} alt={p.title} loading="lazy" /> : null}
+                  <span className="signal-story-date">{formatDate(p.published_at, locale)}</span>
+                  <strong>{p.title}</strong>
+                  {p.excerpt ? <span className="signal-story-description">{p.excerpt}</span> : null}
+                  <span className="signal-story-link">{locale === 'en' ? 'OPEN STORY' : 'OTVORI PRIČU'}</span>
                 </Link>
               </Reveal>
             ))}

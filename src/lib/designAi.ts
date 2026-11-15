@@ -1,6 +1,6 @@
 import type { Env } from '../types'
 
-const PRESETS = 'stage, cinematic, editorial, minimal, noir, vibrant, lux, gallery, nocturne, wander, mono, polaroid, expose, reverie'
+const PRESETS = 'signal, stage, cinematic, editorial, minimal, noir, vibrant, lux, gallery, nocturne, wander, mono, polaroid, expose, reverie'
 const FONTS = 'cormorant-inter, playfair-source, dmserif-dmsans, bodoni-jost, sora-space, fraunces-inter, anton-inter, archivo'
 
 const SYSTEM = [
@@ -27,6 +27,11 @@ const STAGE_PALETTE = {
   light: { background: '#f5f2ef', backgroundSoft: '#ebe7e4', surface: '#ffffff', surfaceRaised: '#f3efec', text: '#171416', muted: '#60585a', border: '#d9d0d2' },
 }
 
+const SIGNAL_PALETTE = {
+  dark: { background: '#0b0f10', backgroundSoft: '#111819', surface: '#172122', surfaceRaised: '#202c2b', text: '#f0f2e9', muted: '#9aa9a2', border: '#33413d' },
+  light: { background: '#eff2eb', backgroundSoft: '#e3e9df', surface: '#f9fbf6', surfaceRaised: '#e8ede5', text: '#131a17', muted: '#53615a', border: '#cbd6ce' },
+}
+
 function parseJson(text: string): Record<string, any> | null {
   let t = text.trim()
   t = t.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '')
@@ -43,8 +48,8 @@ function parseJson(text: string): Record<string, any> | null {
 function fallbackDesign(prompt: string): Record<string, any> {
   const p = prompt.toLowerCase()
   const d: Record<string, any> = {
-    preset: 'stage', mode: 'dark', accent: '#d52f40', fontPair: 'anton-inter',
-    layout: 'masonry', hero: 'cinematic', radius: 6, animations: true, grain: true, headingCase: 'uppercase', palette: STAGE_PALETTE,
+    preset: 'signal', mode: 'dark', accent: '#c4f36a', fontPair: 'sora-space',
+    layout: 'masonry', hero: 'cinematic', radius: 8, animations: true, grain: true, headingCase: 'normal', palette: SIGNAL_PALETTE,
   }
   if (/svijetl|light|bright|airy|bijel|white|čist|clean|pastel/.test(p)) d.mode = 'light'
   if (/minimal|čist|simple|clean/.test(p)) {
@@ -59,14 +64,22 @@ function fallbackDesign(prompt: string): Record<string, any> {
   if (/editorial|elegant|serif|lux|luksuz|klas/.test(p)) {
     d.preset = 'editorial'; d.fontPair = 'playfair-source'; d.grain = false; d.radius = 4
   }
+  if (/signal|geek|metal|rock|concert|koncert|terenski|afterdark|archive|arhiv/.test(p)) {
+    d.preset = 'signal'; d.mode = 'dark'; d.accent = '#c4f36a'; d.fontPair = 'sora-space'; d.layout = 'masonry'; d.hero = 'cinematic'; d.radius = 8; d.headingCase = 'normal'; d.palette = SIGNAL_PALETTE
+  }
   if (/mozaik|masonry/.test(p)) d.layout = 'masonry'
   if (/mrež|grid|kvadrat/.test(p)) d.layout = 'grid'
   const colors: Record<string, string> = {
     zlatn: '#c8a24a', gold: '#c8a24a', žut: '#d4b06a', plav: '#4f7cff', blue: '#4f7cff',
     crven: '#ff5d5d', red: '#ff5d5d', zelen: '#34d399', green: '#34d399',
+    lime: '#c4f36a', chartreuse: '#c4f36a', 'fosforno-zelen': '#c4f36a',
     ljubičast: '#7c5cff', purple: '#7c5cff', roza: '#e272b4', pink: '#e272b4', bež: '#b08968', beige: '#b08968',
   }
-  for (const [k, v] of Object.entries(colors)) if (p.includes(k)) d.accent = v
+  for (const [k, v] of Object.entries(colors)) {
+    const word = new RegExp(`(?:^|\\W)${k}(?:$|\\W)`, 'i')
+    const excluded = new RegExp(`(?:no|not|avoid|without|bez|ne)\\s+(?:\\w+\\s+){0,2}${k}(?:$|\\W)`, 'i')
+    if (word.test(p) && !excluded.test(p)) d.accent = v
+  }
   return d
 }
 

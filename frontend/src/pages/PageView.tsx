@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { api } from '../api'
 import { Loading } from '../components/ui'
 import { renderBody } from '../lib/render'
+import { SignalPageHeader } from '../components/SignalPageHeader'
 import type { PageItem } from '../types'
 
 export function PageView() {
@@ -23,11 +24,10 @@ export function PageView() {
   if (!page) return <div className="container section empty">Stranica nije pronađena.</div>
 
   return (
-    <section className="section" style={{ paddingTop: 72 }}>
+    <section className="signal-subpage signal-static-page section">
       <div className="container">
         <div className="prose">
-          <div className="eyebrow">Info</div>
-          <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.4rem)', marginBottom: 24 }}>{page.title}</h1>
+          <SignalPageHeader code="INFO / 06" label="FIELD FILE" title={page.title} />
           {page.body ? renderBody(page.body) : null}
         </div>
       </div>

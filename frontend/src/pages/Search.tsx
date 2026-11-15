@@ -4,10 +4,11 @@ import { useSite } from '../store'
 import { api } from '../api'
 import { Lightbox } from '../components/Lightbox'
 import { Reveal } from '../components/Reveal'
+import { SignalPageHeader } from '../components/SignalPageHeader'
 import type { ImageItem } from '../types'
 
 export function Search() {
-  const { t } = useSite()
+  const { t, locale } = useSite()
   const [q, setQ] = useState('')
   const [results, setResults] = useState<ImageItem[]>([])
   const [lightbox, setLightbox] = useState<number | null>(null)
@@ -29,16 +30,11 @@ export function Search() {
   }, [q])
 
   return (
-    <section className="section" style={{ paddingTop: 72 }}>
+    <section className="signal-subpage signal-search-page section">
       <div className="container">
-        <div className="section-head">
-          <div>
-            <div className="eyebrow">Traži</div>
-            <h2>{t('nav.search')}</h2>
-          </div>
-        </div>
+        <SignalPageHeader code="FIND / 05" label={locale === 'en' ? 'Archive search' : 'Pretraga arhive'} title={t('nav.search')} description={locale === 'en' ? 'Find a moment in the archive.' : 'Pronađi trenutak iz arhive.'} />
 
-        <div style={{ position: 'relative', maxWidth: 520, marginBottom: 32 }}>
+        <div className="signal-search-box">
           <SearchIcon size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-faint)' }} />
           <input
             className="input"

@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useSite } from '../store'
 import { api } from '../api'
 import { Loading } from '../components/ui'
+import { SignalPageHeader } from '../components/SignalPageHeader'
 import { renderBody } from '../lib/render'
 import type { Post } from '../types'
 import { formatDate } from '../lib/image'
@@ -27,27 +28,18 @@ export function PostDetail() {
   if (!post) return <div className="container section empty">Objava nije pronađena.</div>
 
   return (
-    <section className="section" style={{ paddingTop: 64 }}>
-      <div className="container">
-        <Link to="/posts" className="btn btn-ghost btn-sm" style={{ marginBottom: 28 }}>
+    <section className="signal-subpage signal-post-detail section">
+      <div className="container signal-article-container">
+        <Link to="/posts" className="signal-back-link">
           <ArrowLeft size={15} /> {t('common.back')}
         </Link>
 
-        <div className="prose">
-          <div className="eyebrow">{formatDate(post.published_at, locale)}</div>
-          <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.4rem)', marginBottom: 20 }}>{post.title}</h1>
-          {post.cover ? <img src={post.cover} alt={post.title} style={{ borderRadius: 18 }} /> : null}
-          {post.body ? <div style={{ marginTop: 24 }}>{renderBody(post.body)}</div> : null}
-          {post.tags?.length ? (
-            <div style={{ marginTop: 28 }}>
-              {post.tags.map((tg) => (
-                <span className="tag" key={tg}>
-                  {tg}
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        <SignalPageHeader code="FIELD NOTE / 04" label={formatDate(post.published_at, locale)} title={post.title} />
+        {post.cover ? <img className="signal-article-cover" src={post.cover} alt={post.title} /> : null}
+        <article className="prose signal-article-body">
+          {post.body ? renderBody(post.body) : null}
+          {post.tags?.length ? <div className="signal-article-tags">{post.tags.map((tg) => <span className="tag" key={tg}>{tg}</span>)}</div> : null}
+        </article>
       </div>
     </section>
   )

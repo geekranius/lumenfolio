@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, MapPin, Calendar } from 'lucide-react'
+import { ArrowLeft, MapPin, Camera } from 'lucide-react'
 import { useSite } from '../store'
 import { api } from '../api'
 import { Lightbox } from '../components/Lightbox'
 import { Reveal } from '../components/Reveal'
 import { Loading } from '../components/ui'
+import { SignalPageHeader } from '../components/SignalPageHeader'
 import { renderBody } from '../lib/render'
 import type { Gallery, ImageItem } from '../types'
 import { formatDate } from '../lib/image'
@@ -42,69 +43,42 @@ export function GalleryDetail() {
   }
 
   return (
-    <section className="section" style={{ paddingTop: 48 }}>
+    <section className="signal-subpage signal-gallery-detail section">
       <div className="container">
-        <Link to="/galleries" className="btn btn-ghost btn-sm" style={{ marginBottom: 28 }}>
-          <ArrowLeft size={15} /> {t('gallery.backToGalleries')}
-        </Link>
-
-        <div className="section-head" style={{ marginBottom: 14 }}>
-          <div>
-            <div className="eyebrow">Galerija</div>
-            <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)' }}>{gallery.title}</h1>
-          </div>
+        <div className="signal-detail-top">
+          <Link to="/galleries" className="signal-back-link"><ArrowLeft size={15} /> {t('gallery.backToGalleries')}</Link>
+          <span>GEEKRANIUS / ARCHIVE FILE</span>
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 10 }}>
-          {gallery.event_date ? (
-            <span className="muted" style={{ display: 'inline-flex', gap: 7, alignItems: 'center', fontSize: '0.92rem' }}>
-              <Calendar size={16} /> {formatDate(gallery.event_date, locale)}
-            </span>
-          ) : null}
-          {gallery.location ? (
-            <span className="muted" style={{ display: 'inline-flex', gap: 7, alignItems: 'center', fontSize: '0.92rem' }}>
-              <MapPin size={16} /> {gallery.location}
-            </span>
-          ) : null}
-          <span className="muted" style={{ fontSize: '0.92rem' }}>
-            {gallery.image_count} {t('common.photos')}
-          </span>
-        </div>
+        <SignalPageHeader
+          code="GALLERY / LIVE FILE"
+          label={gallery.event_date ? formatDate(gallery.event_date, locale) : (locale === 'en' ? 'Undated session' : 'Nedatirana sesija')}
+          title={gallery.title}
+          description={gallery.description || undefined}
+          aside={(
+            <div className="signal-detail-readouts">
+              {gallery.location ? <div><span>{locale === 'en' ? 'VENUE' : 'LOKACIJA'}</span><strong><MapPin size={14} /> {gallery.location}</strong></div> : null}
+              <div><span>{locale === 'en' ? 'FRAME COUNT' : 'BROJ FOTOGRAFIJA'}</span><strong><Camera size={14} /> {gallery.image_count} {t('common.photos')}</strong></div>
+            </div>
+          )}
+        />
 
-        {gallery.description ? (
-          <p className="muted" style={{ maxWidth: 720, fontSize: '1.08rem' }}>
-            {gallery.description}
-          </p>
-        ) : null}
+        {gallery.tags?.length ? <div className="signal-detail-tags">{gallery.tags.map((tag) => <span className="tag" key={tag}>{tag}</span>)}</div> : null}
+        {gallery.body ? <div className="prose signal-gallery-story">{renderBody(gallery.body)}</div> : null}
 
-        {gallery.tags?.length ? (
-          <div style={{ margin: '16px 0 8px' }}>
-            {gallery.tags.map((tg) => (
-              <span className="tag" key={tg}>
-                {tg}
-              </span>
-            ))}
-          </div>
-        ) : null}
-
-        {gallery.body ? (
-          <div className="prose" style={{ margin: '28px 0 40px' }}>
-            {renderBody(gallery.body)}
-          </div>
-        ) : null}
-
-        <div style={{ margin: '8px 0 28px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span className="muted" style={{ fontSize: '0.85rem' }}>Podijeli:</span>
+        <div className="signal-share-row">
+          <span>{locale === 'en' ? 'SHARE THIS FILE' : 'PODIJELI OVAJ ZAPIS'}</span>
           <a className="tag" href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer">Facebook</a>
           <a className="tag" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(gallery.title)}`} target="_blank" rel="noopener noreferrer">X</a>
           <a className="tag" href={`https://wa.me/?text=${encodeURIComponent(`${gallery.title} ${shareUrl}`)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          <span className="signal-share-count">{images.length} / {locale === 'en' ? 'FRAMES' : 'FOTOGRAFIJA'}</span>
         </div>
 
-        <div className="masonry">
+        <div className="signal-photo-grid">
           {images.map((img, i) => (
-            <div className="masonry-item" key={img.id}>
+            <div className="signal-photo-cell" key={img.id}>
               <Reveal delay={(i % 4) * 30}>
-                <div className="photo-tile" onClick={() => setLightbox(i)}>
+                <button className="photo-tile signal-photo-tile" type="button" onClick={() => setLightbox(i)} aria-label={`${locale === 'en' ? 'Open photo' : 'Otvori fotografiju'} ${i + 1}`}>
                   <img
                     src={img.src}
                     srcSet={img.srcset}
@@ -116,7 +90,8 @@ export function GalleryDetail() {
                   />
                   <div className="shade" />
                   <div className="zoom">+</div>
-                </div>
+                  <span className="signal-photo-number">{String(i + 1).padStart(3, '0')}</span>
+                </button>
               </Reveal>
             </div>
           ))}

@@ -40,12 +40,15 @@ export function Nav({ pages }: { pages: PageItem[] }) {
   return (
     <header className={`nav ${scrolled ? 'scrolled' : ''}`}>
       <div className="container nav-inner">
-        <NavLink to="/" className="brand">
-          {site.logo ? <img className="brand-logo" src={site.logo} alt={site.name} /> : <span className="brand-mark" />}
-          <span>{site.name}</span>
+        <NavLink to="/" className="brand" aria-label={site.name}>
+          {site.logo ? (
+            <img className="brand-logo" src={site.logo} alt={`${site.name} logo`} />
+          ) : (
+            <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
+          )}
         </NavLink>
 
-        <nav className={`nav-links ${open ? 'open' : ''}`}>
+        <nav className={`nav-links ${open ? 'open' : ''}`} aria-label={t('nav.home')}>
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} className="nav-link" end={l.to === '/'}>
               {l.label}
@@ -54,13 +57,13 @@ export function Nav({ pages }: { pages: PageItem[] }) {
         </nav>
 
         <div className="nav-actions">
-          <NavLink to="/search" className="icon-btn" title={t('nav.search')}>
+          <NavLink to="/search" className="icon-btn" title={t('nav.search')} aria-label={t('nav.search')}>
             <Search size={18} />
           </NavLink>
-          <button className="icon-btn" onClick={toggleTheme} title={t('nav.theme')}>
+          <button className="icon-btn" onClick={toggleTheme} title={t('nav.theme')} aria-label={t('nav.theme')}>
             {dark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button className="icon-btn nav-toggle" onClick={() => setOpen((v) => !v)}>
+          <button className="icon-btn nav-toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label={open ? 'Close menu' : 'Open menu'}>
             {open ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>

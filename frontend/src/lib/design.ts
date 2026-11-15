@@ -30,18 +30,23 @@ export const STAGE_PALETTE = {
   light: { background: '#f5f2ef', backgroundSoft: '#ebe7e4', surface: '#ffffff', surfaceRaised: '#f3efec', text: '#171416', muted: '#60585a', border: '#d9d0d2' },
 }
 
+export const SIGNAL_PALETTE = {
+  dark: { background: '#0b0f10', backgroundSoft: '#111819', surface: '#172122', surfaceRaised: '#202c2b', text: '#f0f2e9', muted: '#9aa9a2', border: '#33413d' },
+  light: { background: '#eff2eb', backgroundSoft: '#e3e9df', surface: '#f9fbf6', surfaceRaised: '#e8ede5', text: '#131a17', muted: '#53615a', border: '#cbd6ce' },
+}
+
 export const DEFAULT_DESIGN: DesignConfig = {
-  preset: 'stage',
+  preset: 'signal',
   mode: 'dark',
-  accent: '#d52f40',
-  fontPair: 'anton-inter',
+  accent: '#c4f36a',
+  fontPair: 'sora-space',
   layout: 'masonry',
   hero: 'cinematic',
-  radius: 6,
+  radius: 8,
   animations: true,
   grain: true,
-  headingCase: 'uppercase',
-  palette: STAGE_PALETTE,
+  headingCase: 'normal',
+  palette: SIGNAL_PALETTE,
 }
 
 export const FONT_PAIRS: Record<string, { label: string; display: string; body: string; url: string }> = {
@@ -96,6 +101,10 @@ export const FONT_PAIRS: Record<string, { label: string; display: string; body: 
 }
 
 export const PRESETS: Record<string, { label: string; design: DesignConfig }> = {
+  signal: {
+    label: 'Signal / Afterdark',
+    design: { preset: 'signal', mode: 'dark', accent: '#c4f36a', fontPair: 'sora-space', layout: 'masonry', hero: 'cinematic', radius: 8, animations: true, grain: true, headingCase: 'normal', palette: SIGNAL_PALETTE },
+  },
   stage: {
     label: 'Stage / Rock',
     design: { preset: 'stage', mode: 'dark', accent: '#d52f40', fontPair: 'anton-inter', layout: 'masonry', hero: 'cinematic', radius: 6, animations: true, grain: true, headingCase: 'uppercase', palette: STAGE_PALETTE },

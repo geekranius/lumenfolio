@@ -1,68 +1,52 @@
 import { Link } from 'react-router-dom'
-import { Mail, Phone, MapPin } from 'lucide-react'
+import { ArrowUpRight, Mail, MapPin, Phone } from 'lucide-react'
 import { useSite } from '../store'
 import { SocialLinks } from './SocialLinks'
 import type { PageItem } from '../types'
 
 export function Footer({ pages }: { pages: PageItem[] }) {
-  const { site } = useSite()
+  const { site, locale } = useSite()
   const { contact } = site
   const year = new Date().getFullYear()
 
   return (
-    <footer className="footer">
+    <footer className="signal-footer">
       <div className="container">
-        <div className="footer-inner">
-          <div>
-            <div className="footer-brand">{site.name}</div>
-            <p className="muted" style={{ maxWidth: 340, marginTop: 8, fontSize: '0.92rem' }}>
-              {site.tagline}
-            </p>
-            {contact.email || contact.phone || (contact.address && contact.city) ? (
-              <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.88rem', color: 'var(--text-dim)' }}>
-                {contact.email ? (
-                  <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
-                    <Mail size={14} /> <a href={`mailto:${contact.email}`}>{contact.email}</a>
-                  </span>
-                ) : null}
-                {contact.phone ? (
-                  <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
-                    <Phone size={14} /> <a href={`tel:${contact.phone}`}>{contact.phone}</a>
-                  </span>
-                ) : null}
-                {contact.city ? (
-                  <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
-                    <MapPin size={14} /> {contact.address ? `${contact.address}, ` : ''}
-                    {contact.city}
-                  </span>
-                ) : null}
+        <div className="signal-footer-topline"><span>GEEKRANIUS / LIVE IMAGE ARCHIVE</span><span>END OF TRANSMISSION <i /></span></div>
+        <div className="signal-footer-grid">
+          <div className="signal-footer-identity">
+            <div className="signal-footer-logo">
+              {site.logo ? <img src={site.logo} alt={`${site.name} logo`} /> : <span>GF / 01</span>}
+            </div>
+            <p>{site.tagline}</p>
+            {contact.email || contact.phone || contact.city ? (
+              <div className="signal-footer-contact">
+                {contact.email ? <a href={`mailto:${contact.email}`}><Mail size={15} /> {contact.email}</a> : null}
+                {contact.phone ? <a href={`tel:${contact.phone}`}><Phone size={15} /> {contact.phone}</a> : null}
+                {contact.city ? <span><MapPin size={15} /> {contact.address ? `${contact.address}, ` : ''}{contact.city}</span> : null}
               </div>
             ) : null}
           </div>
 
-          {pages.length ? (
-            <div>
-              <div className="eyebrow">Info</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {pages.map((p) => (
-                  <Link key={p.id} to={`/page/${p.slug}`} className="muted" style={{ fontSize: '0.92rem' }}>
-                    {p.title}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ) : null}
+          <nav className="signal-footer-nav" aria-label={locale === 'en' ? 'Footer' : 'Navigacija podnožja'}>
+            <span className="signal-footer-label">{locale === 'en' ? 'EXPLORE' : 'ISTRAŽI'}</span>
+            <Link to="/galleries">{locale === 'en' ? 'The archive' : 'Arhiva'} <ArrowUpRight size={14} /></Link>
+            {site.showCalendar ? <Link to="/events">{locale === 'en' ? 'Calendar' : 'Kalendar'} <ArrowUpRight size={14} /></Link> : null}
+            {site.showPosts ? <Link to="/posts">{locale === 'en' ? 'Stories' : 'Priče'} <ArrowUpRight size={14} /></Link> : null}
+            {pages.map((page) => <Link key={page.id} to={`/page/${page.slug}`}>{page.title} <ArrowUpRight size={14} /></Link>)}
+          </nav>
 
-          <SocialLinks socials={site.socials} />
+          <div className="signal-footer-social">
+            <span className="signal-footer-label">{locale === 'en' ? 'ELSEWHERE' : 'DRUGDJE'}</span>
+            <SocialLinks socials={site.socials} />
+            <span className="signal-footer-caption">{site.name}</span>
+          </div>
         </div>
 
-        <div className="footer-copy">
-          <span>
-            © {year} {site.name}. Sva prava pridržana.
-          </span>
-          <Link to="/admin" style={{ color: 'var(--text-faint)' }}>
-            Admin
-          </Link>
+        <div className="signal-footer-bottom">
+          <span>© {year} {site.name}. {locale === 'en' ? 'All rights reserved.' : 'Sva prava pridržana.'}</span>
+          <span className="signal-footer-coordinates">FIELD LOG / GF—001</span>
+          <Link to="/admin">{locale === 'en' ? 'ADMIN' : 'ADMINISTRACIJA'}</Link>
         </div>
       </div>
     </footer>

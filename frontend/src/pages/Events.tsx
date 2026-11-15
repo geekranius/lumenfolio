@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSite } from '../store'
 import { api } from '../api'
 import { Loading, Empty } from '../components/ui'
+import { SignalPageHeader } from '../components/SignalPageHeader'
 import type { EventItem } from '../types'
 import { formatDate } from '../lib/image'
 
@@ -68,14 +69,14 @@ export function Events() {
   const past = events.filter((e) => new Date(e.start_date) < today).sort((a, b) => b.start_date.localeCompare(a.start_date))
 
   return (
-    <section className="section" style={{ paddingTop: 72 }}>
+    <section className="signal-subpage signal-events-page section">
       <div className="container" style={{ maxWidth: 760 }}>
-        <div className="section-head">
-          <div>
-            <div className="eyebrow">Kalendar</div>
-            <h2>{t('nav.events')}</h2>
-          </div>
-        </div>
+        <SignalPageHeader
+          code="SCHEDULE / 03"
+          label={locale === 'en' ? 'Live dates' : 'Datumi uživo'}
+          title={t('nav.events')}
+          description={locale === 'en' ? 'Upcoming shows and notes from the calendar.' : 'Nadolazeći nastupi i zapisi iz kalendara.'}
+        />
 
         {loading ? (
           <Loading />
