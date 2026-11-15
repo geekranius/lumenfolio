@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Shuffle } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ScanLine, Shuffle } from 'lucide-react'
 import { useSite } from '../store'
 import { api } from '../api'
 import { Reveal } from '../components/Reveal'
 import { GalleryCard } from '../components/GalleryCard'
 import { EmbedBlock } from '../components/EmbedBlock'
 import { Marquee } from '../components/Marquee'
-import type { Gallery, Post, EventItem } from '../types'
+import type { Gallery, Post, EventItem, ImageItem } from '../types'
 import { formatDate } from '../lib/image'
 
 const pad = (value: number) => String(value).padStart(2, '0')
@@ -18,6 +18,7 @@ export function Home() {
   const [galleries, setGalleries] = useState<Gallery[]>([])
   const [posts, setPosts] = useState<Post[]>([])
   const [events, setEvents] = useState<EventItem[]>([])
+  const [featuredFrame, setFeaturedFrame] = useState<ImageItem | null>(null)
 
   useEffect(() => {
     api.get<Gallery[]>('/api/galleries').then(setGalleries).catch(() => {})
@@ -26,7 +27,28 @@ export function Home() {
   }, [])
 
   const latestGallery = galleries[0]
-  const heroImage = latestGallery?.cover || site.avatar || ''
+  useEffect(() => {
+    if (!latestGallery) return
+    let active = true
+    api.get<{ images: ImageItem[] }>(`/api/galleries/${latestGallery.slug}`)
+      .then(({ images }) => { if (active) setFeaturedFrame(images?.[0] || null) })
+      .catch(() => {})
+    return () => { active = false }
+  }, [latestGallery?.slug])
+
+  const heroImage = featuredFrame?.src || latestGallery?.cover || site.avatar || ''
+  const heroExif = latestGallery?.show_exif ? featuredFrame?.exif : null
+  const cameraName = [heroExif?.Make, heroExif?.Model].filter(Boolean).join(' ') || (locale === 'en' ? 'STAGE UNIT / GF-01' : 'POZORNICA / GF-01')
+  const shutter = Number(heroExif?.ExposureTime)
+  const aperture = Number(heroExif?.FNumber)
+  const shutterLabel = shutter > 0 ? (shutter < 1 ? `1/${Math.round(1 / shutter)}` : `${shutter}s`) : '—'
+  const gearReadouts = [
+    { label: locale === 'en' ? 'CAMERA' : 'KAMERA', value: cameraName },
+    { label: locale === 'en' ? 'APERTURE' : 'BLENDA', value: aperture > 0 ? `f/${aperture}` : '—' },
+    { label: 'ISO', value: heroExif?.ISO ? String(heroExif.ISO) : '—' },
+    { label: locale === 'en' ? 'SHUTTER' : 'OKIDAČ', value: shutterLabel },
+    { label: locale === 'en' ? 'FOCAL' : 'ŽARIŠNA', value: heroExif?.FocalLength ? `${heroExif.FocalLength} mm` : '—' },
+  ]
   const description = site.description?.trim() || ''
   const about = site.about?.trim() || ''
   const showDescription = description && !/^(profesionalni fotografski portfolio\.?|professional photography portfolio\.?)$/i.test(description)
@@ -52,20 +74,24 @@ export function Home() {
           <div className="signal-hero-copy">
             <div className="signal-kicker">
               <span className="signal-led" />
-              <span>GEEKRANIUS / FIELD ARCHIVE</span>
+              <span>GEEK LAB / LIVE PHOTOGRAPHY</span>
               <span className="signal-kicker-line" />
-              <span>{pad(galleries.length)}.01</span>
+              <span>HR—{pad(galleries.length)}</span>
             </div>
 
-            <p className="signal-site-name">{site.name}</p>
+            <div className="signal-lab-identity">
+              <img src="https://geekranius.stream/img/geekranius-480.webp" alt="Geekranius T-Rex maskota sa slušalicama" width="64" height="64" />
+              <span><strong>{site.name}</strong><small>{locale === 'en' ? 'THE GEEK BEHIND THE LENS' : 'GEEK IZA OBJEKTIVA'}</small></span>
+              <i><b /> {locale === 'en' ? 'FIELD SIGNAL LIVE' : 'SIGNAL S POZORNICE'}</i>
+            </div>
             <h1 className="signal-title">
               {locale === 'en' ? (
-                <>Light meets <em>noise.</em></>
+                <>Loud.<br /><em>In focus.</em></>
               ) : (
-                <>Svjetlo susreće <em>žamor.</em></>
+                <>Glasno.<br /><em>U fokusu.</em></>
               )}
             </h1>
-            <p className="signal-tagline">{site.tagline}</p>
+            <p className="signal-tagline">{locale === 'en' ? 'Rock, metal and live music — seen from inside the noise.' : 'Rock, metal i glazba uživo — iz samog srca buke.'}</p>
             {showDescription ? <p className="signal-description">{description}</p> : null}
 
             <div className="signal-hero-actions">
@@ -92,17 +118,18 @@ export function Home() {
 
           <div className="signal-hero-side">
             <div className="signal-frame-heading">
-              <span>GF—LIVE.LOG</span>
-              <span>{latestYear} <i /> ARCHIVE</span>
+                <span><b className="signal-amp-mark">G</b> GEEKRANIUS / STAGE CAM</span>
+                <span>{latestYear} <i /> LIVE FEED</span>
             </div>
             <figure className="signal-feature-frame">
               <div className="signal-feature-image">
                 {heroImage ? <img src={heroImage} alt={latestGallery?.title || site.name} /> : <div className="signal-image-placeholder" />}
                 <div className="signal-image-grid" />
-                <span className="signal-frame-code">FRAME / {pad(galleries.length || 1)}</span>
+                <span className="signal-frame-code">CAM—01 / FRAME {pad(galleries.length || 1)}</span>
                 <span className="signal-frame-crosshair signal-crosshair-a" />
                 <span className="signal-frame-crosshair signal-crosshair-b" />
                 <span className="signal-vertical-note">LIGHT · SOUND · MEMORY</span>
+                <span className="signal-frame-live"><i /> REC // CROWD NOISE</span>
               </div>
               <figcaption className="signal-feature-caption">
                 <div className="signal-waveform" aria-hidden="true">
@@ -111,7 +138,7 @@ export function Home() {
                   ))}
                 </div>
                 <div className="signal-caption-copy">
-                  <span>{locale === 'en' ? 'LATEST ENTRY' : 'ZADNJI ZAPIS'}</span>
+                  <span>{locale === 'en' ? 'LAST SHOT / LIVE' : 'POSLJEDNJI KADAR / UŽIVO'}</span>
                   <strong>{latestGallery?.title || (locale === 'en' ? 'The live archive' : 'Arhiva uživo')}</strong>
                   <small>
                     {latestGallery?.event_date ? formatDate(latestGallery.event_date, locale) : ''}
@@ -125,9 +152,15 @@ export function Home() {
                 ) : null}
               </figcaption>
             </figure>
+            <div className="signal-gear-readout" aria-label={locale === 'en' ? 'Camera EXIF readout' : 'EXIF podaci kamere'}>
+              <div className="signal-gear-heading"><span><ScanLine size={13} /> {locale === 'en' ? 'CAMERA TELEMETRY' : 'TELEMETRIJA KAMERE'}</span><span>EXIF // 0{gearReadouts.filter((item) => item.value !== '—').length}</span></div>
+              <div className="signal-gear-values">
+                {gearReadouts.map((item) => <div key={item.label}><span>{item.label}</span><strong>{item.value}</strong></div>)}
+              </div>
+            </div>
             <div className="signal-frame-footer">
-              <span>FIG. 01 — {locale === 'en' ? 'LIVE MUSIC ARCHIVE' : 'ARHIVA KONCERTNE FOTOGRAFIJE'}</span>
-              <span>↳ {locale === 'en' ? 'SCROLL TO EXPLORE' : 'POMAKNI ZA PREGLED'}</span>
+              <span>FIG. 01 — {locale === 'en' ? 'ARCHIVE' : 'ARHIVA'} / {totalPhotos.toLocaleString(locale === 'en' ? 'en-GB' : 'hr-HR')} {locale === 'en' ? 'FRAMES' : 'KADROVA'}</span>
+              <span>{totalPhotos.toLocaleString(locale === 'en' ? 'en-GB' : 'hr-HR')} {locale === 'en' ? 'NEGATIVES' : 'NEGATIVA'} ↘</span>
             </div>
           </div>
         </div>

@@ -104,7 +104,7 @@ export function GalleryDetail() {
       </div>
 
       {lightbox !== null && images.length > 0 ? (
-        <Lightbox images={images} index={lightbox} showExif={gallery.show_exif} onClose={() => setLightbox(null)} onNav={setLightbox} />
+        <Lightbox images={images} index={lightbox} showExif={gallery.show_exif} locale={locale} onClose={() => setLightbox(null)} onNav={setLightbox} />
       ) : null}
     </section>
   )
