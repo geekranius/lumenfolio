@@ -3,10 +3,12 @@ import { Outlet } from 'react-router-dom'
 import { Nav } from './Nav'
 import { Footer } from './Footer'
 import { ScrollProgress } from './ScrollProgress'
+import { useSite } from '../store'
 import { api } from '../api'
 import type { PageItem } from '../types'
 
 export function PublicLayout() {
+  const { loading } = useSite()
   const [pages, setPages] = useState<PageItem[]>([])
 
   useEffect(() => {
@@ -15,6 +17,16 @@ export function PublicLayout() {
       .then(setPages)
       .catch(() => {})
   }, [])
+
+  if (loading) {
+    return (
+      <div className="signal-boot" role="status" aria-live="polite">
+        <span className="signal-boot-mark" aria-hidden="true"><i>GF</i></span>
+        <span>GEEKRANIUS / FIELD ARCHIVE</span>
+        <span className="signal-boot-line" aria-hidden="true" />
+      </div>
+    )
+  }
 
   return (
     <>

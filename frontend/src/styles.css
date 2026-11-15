@@ -485,6 +485,11 @@ input[type='color'] { width: 48px; height: 44px; border: 1px solid var(--border-
 }
 
 .signal-home { overflow: clip; }
+.signal-boot { min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: #0b0f10; color: #9aa9a2; font: 650 .62rem/1.4 var(--font-sans); letter-spacing: .16em; }
+.signal-boot-mark { width: 52px; height: 52px; display: grid; place-items: center; border: 1px solid #c4f36a; color: #c4f36a; font: 700 1rem/1 var(--font-sans); transform: rotate(45deg); }
+.signal-boot-mark i { font-style: normal; transform: rotate(-45deg); }
+.signal-boot-line { width: 100px; height: 1px; background: rgba(196,243,106,.18); overflow: hidden; position: relative; }
+.signal-boot-line::after { content: ''; position: absolute; inset: 0; background: #c4f36a; transform: translateX(-100%); animation: signal-boot 1.25s ease-in-out infinite; }
 .signal-hero {
   position: relative;
   isolation: isolate;
@@ -767,6 +772,7 @@ input[type='color'] { width: 48px; height: 44px; border: 1px solid var(--border-
 @keyframes signal-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 @keyframes signal-photo-reveal { from { opacity: .6; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
 @keyframes waveform { from { transform: scaleY(.45); opacity: .55; } to { transform: scaleY(1); opacity: .95; } }
+@keyframes signal-boot { to { transform: translateX(100%); } }
 
 @media (max-width: 1040px) {
   .signal-hero-grid { grid-template-columns: minmax(0,.9fr) minmax(320px,1.1fr); gap: 38px; }
@@ -854,7 +860,7 @@ input[type='color'] { width: 48px; height: 44px; border: 1px solid var(--border-
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .signal-led, .signal-waveform span, .signal-feature-image > img { animation: none !important; }
+  .signal-led, .signal-waveform span, .signal-feature-image > img, .signal-boot-line::after { animation: none !important; }
   .signal-card, .signal-feature-frame, .signal-story, .signal-card-image img { transition-duration: .01ms !important; }
 }
 [data-anim='off'] .signal-led, [data-anim='off'] .signal-waveform span { animation: none !important; }
