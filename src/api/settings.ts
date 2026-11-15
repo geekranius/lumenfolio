@@ -26,6 +26,15 @@ app.put('/admin', requireAdmin, async (c) => {
   // merge nested objects manually for the common ones
   if (body.contact) next.contact = { ...current.contact, ...body.contact }
   if (body.seo) next.seo = { ...current.seo, ...body.seo }
+  if (body.marqueeItems !== undefined) {
+    next.marqueeItems = Array.isArray(body.marqueeItems)
+      ? body.marqueeItems
+          .filter((item): item is string => typeof item === 'string')
+          .map((item) => item.trim().slice(0, 64))
+          .filter(Boolean)
+          .slice(0, 12)
+      : current.marqueeItems
+  }
   await saveSite(c.env, next)
   return json(next)
 })

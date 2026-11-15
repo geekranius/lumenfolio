@@ -7,13 +7,13 @@ import { uuid, slugify, nowIso } from './lib/helpers'
 const toolDefs = [
   {
     name: 'get_site',
-    description: 'Read the current portfolio settings (name, tagline, about, contact, socials, design, seo).',
+    description: 'Read the current portfolio settings (name, tagline, marquee items, about, contact, socials, design, seo).',
     inputSchema: { type: 'object', properties: {}, required: [] },
   },
   {
     name: 'update_site',
     description:
-      'Update portfolio settings. Pass a partial settings object (name, tagline, description, about, contact{email,phone,address,city}, socials[{platform,url,label}], seo{title,description,image}, showCalendar, showPosts).',
+      'Update portfolio settings. Pass a partial settings object (name, tagline, marqueeItems[string[]], description, about, contact{email,phone,address,city}, socials[{platform,url,label}], seo{title,description,image}, showCalendar, showPosts).',
     inputSchema: {
       type: 'object',
       properties: { patch: { type: 'object', description: 'Partial SiteSettings object to merge' } },
@@ -23,7 +23,7 @@ const toolDefs = [
   {
     name: 'apply_design',
     description:
-      'Apply a visual design config. Fields: preset, mode(dark|light), accent(hex), fontPair, layout(masonry|grid), hero(cinematic|full|split|minimal), radius(0-24), animations(bool), grain(bool), headingCase(normal|uppercase).',
+      'Apply a complete visual design config across every public page. Fields: preset, mode(dark|light), accent(hex), fontPair, layout(masonry|grid), hero(cinematic|full|split|minimal), radius(0-24), animations(bool), grain(bool), headingCase(normal|uppercase), palette(dark/light color tokens). This changes presentation only and leaves all content intact.',
     inputSchema: {
       type: 'object',
       properties: { design: { type: 'object', description: 'Partial design config to merge' } },
@@ -37,6 +37,16 @@ const toolDefs = [
     inputSchema: {
       type: 'object',
       properties: { prompt: { type: 'string', description: 'Natural language design description' } },
+      required: ['prompt'],
+    },
+  },
+  {
+    name: 'redesign_site',
+    description:
+      'Use AI to fully redesign the visual identity of the entire site from a natural-language brief. Generates a complete color system for dark/light modes, typography, accent, gallery layout, hero layout, shapes, motion and texture, then saves it to the existing site settings. Applies across home, galleries, posts, events, search, static pages, navigation and footer. Preserves every existing post, gallery, photo, event, page, URL, contact detail and feature; it changes visual design only.',
+    inputSchema: {
+      type: 'object',
+      properties: { prompt: { type: 'string', description: 'Describe the complete desired visual style and any brand references.' } },
       required: ['prompt'],
     },
   },
@@ -160,6 +170,16 @@ async function callTool(env: Env, name: string, args: any): Promise<string> {
       return `Design generated and applied: ${JSON.stringify(d)}`
     }
 
+    case 'redesign_site': {
+      const prompt = String(args?.prompt || '').trim().slice(0, 2000)
+      if (!prompt) throw new Error('Describe the visual redesign you want.')
+      const design = await designFromPrompt(env.AI, prompt)
+      if (!design) return 'Could not generate a design from that prompt. Try a more specific description.'
+      const current = await getSite(env)
+      await saveSite(env, { ...current, design: { ...current.design, ...design } })
+      return `Full site visual redesign applied across all public pages. Existing content and features were preserved. Design: ${JSON.stringify(design)}`
+    }
+
     case 'list_galleries': {
       const { results } = await env.DB.prepare(
         `SELECT id, slug, title, event_date, location, status,
@@ -266,7 +286,7 @@ export async function handleMcp(c: any): Promise<Response> {
       capabilities: { tools: {} },
       serverInfo: { name: 'lumenfolio', version: '1.0.0' },
       instructions:
-        'Build and manage a photographer portfolio. Use update_site for text/info, apply_design or design_from_prompt for the look (colors, fonts, layout, theme), and create_gallery/create_post/create_event/create_page for content. Then tell the user what you changed.',
+        'Build and manage a photographer portfolio. Use redesign_site for a complete AI visual redesign across all pages while preserving content, update_site for site settings and marquee items, apply_design for direct visual controls, and create_gallery/create_post/create_event/create_page for content. A redesign updates only site design settings; it does not delete or rewrite posts, galleries, photos, events, pages, URLs, or features.',
     })
   }
   if (method === 'notifications/initialized' || method === 'initialized') return new Response(null, { status: 202 })

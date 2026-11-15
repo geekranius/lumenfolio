@@ -1,198 +1,183 @@
 # LumenFolio
 
-**AI fotografski portfolio koji radi besplatno na Cloudflareu** (Workers + R2 + D1 + Workers AI).
+**An AI-assisted photography portfolio built on Cloudflare Workers, D1, R2, and Workers AI.**
 
-Fotograf odabere mapu sa slikama, napiše naziv (koncert, vjenčanje, tema…), a sustav:
+LumenFolio helps photographers publish and manage a polished portfolio without maintaining a separate server. Its React admin panel handles galleries, photos, events, posts, pages, site settings, and visual design.
 
-- automatski **obrađuje i smanjuje fotografije** (više veličina, WebP, `srcset` → sve responzivno),
-- **AI opisuje svaku fotografiju** i iz opisa generira **tagove**, opis galerije i naslovnu sliku,
-- **AI predlaže naslov, opis i naslovnu sliku** galerije + SEO meta podatke,
-- izrađuje **galerije, meni, kalendar događaja**, blog objave, stranice, društvene mreže,
-- omogućuje **embed Instagram/TikTok/Facebook/X/YouTube** objava,
-- ima **admin panel** za upravljanje i **jedan-klik deploy**.
+## Features
 
----
+- Responsive galleries with optimized WebP images, multiple sizes, and `srcset`.
+- AI-assisted image captions, tags, gallery descriptions, cover selection, and SEO metadata.
+- Blog posts with lightweight Markdown and social embeds.
+- Event calendar with upcoming and past events.
+- Static pages, contact information, social links, and SEO settings.
+- Search across photo captions and tags.
+- Dark and light themes, design presets, font pairs, accent colors, gallery layouts, hero styles, animation, and texture controls.
+- A **Stage / Rock** visual preset with a dark, high-contrast palette, condensed display typography, and restrained crimson accents.
+- **AI-powered site-wide redesign through MCP.** The `redesign_site` tool creates and applies a complete visual system across the home page, galleries, posts, events, search, static pages, navigation, and footer.
+- **Editable homepage marquee.** Manage its entries from Admin → Settings, one entry per line. Clear the field to hide the marquee.
+- Croatian and English interface translations.
+- Open Graph metadata for social sharing.
+- A Cloudflare one-click deployment flow for new, independent installations.
 
-## ⚡ One-click deploy (za fotografe — bez ičega instaliranog)
+## Content and data safety
 
-1. Postavi ovaj repo **javno** na GitHub.
-2. U `README` (ili bilo gdje) stavi gumb:
+Gallery, photo, event, post, and page records are stored in D1; uploaded media is stored in R2. Design settings and marquee entries are stored in the existing site-settings JSON record. The marquee feature requires no database schema migration.
 
-```html
-<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/geekranius/lumenfolio">
-  <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare" />
-</a>
+Applying a design or running the `redesign_site` MCP tool updates visual settings only. It does not delete or rewrite posts, galleries, photos, events, pages, URLs, contact details, or existing features.
+
+**When updating an existing portfolio, deploy against its existing D1 database and R2 bucket.** The all-zero D1 ID in the tracked `wrangler.jsonc` is a placeholder used by the one-click flow to provision a new database. It must not replace the real database binding of an existing site: a newly provisioned empty database would make existing content disappear from the new Worker even though the old records remain in the original database.
+
+## AI redesign through MCP
+
+The MCP server includes `redesign_site`, which accepts a natural-language design brief and uses Workers AI to generate a validated design configuration. It can change:
+
+- Dark and light color palettes, including page, surface, text, muted text, and border colors.
+- Accent color, typography, and heading case.
+- Hero and gallery layouts, corner radius, grain, and motion.
+
+The result is saved to the existing `site` settings record. Components and routes remain in place, so the portfolio's current content and features continue to work with the new theme. The existing `design_from_prompt` and `apply_design` tools remain available for more focused changes. The MCP endpoint requires an `MCP_API_KEY` or an authenticated admin token.
+
+Example request:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "redesign_site",
+    "arguments": {
+      "prompt": "Create a modern concert photography look: deep charcoal backgrounds, restrained crimson accents, condensed display headlines, editorial image layouts, and subtle motion. Keep the design readable and preserve all existing content."
+    }
+  }
+}
 ```
 
-3. Fotograf klikne gumb → prijavi se na Cloudflare → Cloudflare **automatski** napravi:
-   - Worker, **D1 bazu**, **R2 bucket**, **Workers AI binding**,
-   - pokrene migracije i build → site je **odmah live**.
+## One-click deployment for a new site
 
-4. Nakon deploya, fotograf u Cloudflare dashboardu (Worker → Settings → Variables and Secrets) postavi **secrets**:
+The Cloudflare deploy button is intended for a **new, independent installation**, not for replacing the resources of an existing portfolio.
 
-| Secret | Opis |
-|---|---|
-| `ADMIN_PASSWORD` | Lozinka za prijavu u `/admin` |
-| `ADMIN_JWT_SECRET` | Dugi slučajni string (potpis tokena) |
-| `RAPIDRAW_API_KEY` | Ključ za rapidraw-web integraciju (opcionalno) |
+1. Publish this repository to GitHub.
+2. Add this button to the repository README or project page:
 
-> **Napomena:** AI (Workers AI) mora biti omogućen na računu (besplatan je, samo treba biti aktivan u dashboardu). Ako AI nije dostupan, sustav i dalje radi — samo preskače automatske opise.
+   ```html
+   <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/geekranius/lumenfolio">
+     <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare" />
+   </a>
+   ```
 
-5. (Opcionalno) Dodaj **vlastitu domenu** u Worker → Settings → Domains.
+3. Sign in to Cloudflare and follow the flow. Cloudflare provisions a Worker, D1 database, R2 bucket, Workers AI binding, and migrations for the new installation.
+4. Set the following Worker secrets in Cloudflare Dashboard → Worker → Settings → Variables and Secrets:
 
----
+   | Secret | Purpose |
+   |---|---|
+   | `ADMIN_PASSWORD` | Admin sign-in password |
+   | `ADMIN_JWT_SECRET` | Secret used to sign admin tokens |
+   | `MCP_API_KEY` | Optional key for MCP access |
+   | `RAPIDRAW_API_KEY` | Optional key for the RapidRaw publishing integration |
 
-## ☁️ Detaljno: što treba za Cloudflare
+5. Add a custom domain under Worker → Settings → Domains and Routes, if needed.
 
-### Worker, ne „Pages" (važno)
-Projekt se deploya kao **Cloudflare Worker sa statičkim assetima** — to je danas ekvivalent Pagesa (Cloudflare preporučuje Worker za full-stack aplikacije). Razlika:
+Workers AI must be enabled for AI-assisted captions and design generation. The rest of the portfolio continues to work if AI is unavailable.
 
-- **Worker** (ovaj projekt): first-class **Workers AI + D1 + R2** binding, jedan deploy, i **one-click „Deploy to Cloudflare" gumb**.
-- **Pages**: može hostati isto, ali bindinge (AI / D1 / R2) moraš ručno podešavati u dashboardu, i **nema one-click gumb** (gumb podržava samo Workere).
+## Existing Cloudflare installation
 
-Rezultat je isti: stranica na Cloudflareu, na `*.workers.dev` ili tvojoj domeni, s besplatnim R2 skladištem.
+Before deploying an update, identify and keep the existing Worker, D1 database, R2 bucket, custom domain, and secrets. Do not run the new-install flow for an existing site.
 
-### API token (za ručni `wrangler` deploy)
-Za ručni deploy trebaš Cloudflare **API token** (My Profile → API Tokens) s:
-- `Workers Scripts: Edit`
-- `D1: Edit`
-- `Workers R2 Storage: Edit`
-
-i `CLOUDFLARE_ACCOUNT_ID`.
-
-> Predložak „Edit Cloudflare Workers" pokriva Workers + R2, ali **ne sadrži D1** — dodaj `D1: Edit` ručno (ili „Start from scratch" s točno te 3 permisije).
-
-### AI modeli (besplatni tier)
-- **Opis fotografija**: `@cf/meta/llama-3.2-11b-vision-instruct` (Meta Llama 3.2 Vision)
-- **Opis / tagovi galerije**: `@cf/meta/llama-3.2-3b-instruct`
-- Prvi poziv vizijskog modela traži prihvaćanje licence — kod to rješava automatski.
-- Partner-modeli (npr. Moondream) na free tieru mogu vraćati prazno, zato koristimo Meta modele.
-
-### Vlastita domena
-Worker → **Settings → Domains & Routes → Add custom domain**.
-
----
-
-## 🧑‍💻 Lokalni razvoj (za developera)
+For a local deployment, create an untracked `wrangler.local.jsonc` from the tracked configuration and set its D1 database ID and R2 bucket name to the resources already used by the portfolio. Keep that file and all secrets out of Git. Then use:
 
 ```bash
-npm install
+npm run deploy:owner
+```
 
-# 1) Kopiraj i uredi secretse
+The project intentionally keeps the all-zero D1 ID in the tracked configuration so that the one-click button can provision a fresh database for new users. Never commit account-specific resource IDs or credentials.
+
+## Local development
+
+```bash
+npm ci
 cp .dev.vars.example .dev.vars
+```
 
-# 2) Napravi lokalnu D1 bazu (updatiraj database_id u wrangler.jsonc za produkciju)
+Configure the local secrets and use a local D1 database before starting the app:
+
+```bash
 npm run db:migrate:local
-
-# 3) Pokreni Worker (API) + Vite (frontend) istovremeno
 npm run dev
 ```
 
-- Frontend: http://localhost:5173
-- API/Worker: http://localhost:8787
+- Frontend: `http://localhost:5173`
+- Worker API: `http://localhost:8787`
 
-### Produkcijski deploy (ručno)
+Build the frontend with:
 
 ```bash
-npx wrangler d1 create lumenfolio-db            # ispiše database_id → upiši ga u wrangler.jsonc
-npm run db:migrate:remote                        # primijeni migracije
+npm run build
+```
+
+For a new Cloudflare account, the deployment scripts are:
+
+```bash
+npx wrangler d1 create lumenfolio-db
+npm run db:migrate:remote
 npx wrangler secret put ADMIN_PASSWORD
 npx wrangler secret put ADMIN_JWT_SECRET
-npx wrangler secret put RAPIDRAW_API_KEY
-npm run deploy                                   # build frontenda + wrangler deploy
+npm run deploy
 ```
 
-> **Vlasnik sačuvane instance:** ako imaš `wrangler.local.jsonc` (gitignored, sadrži tvoj pravi `database_id`), deployaj s `npm run deploy:owner`. Javni repo namjerno drži all-zero placeholder u `wrangler.jsonc` kako bi one-click gumb kod drugih fotografa sam napravio njihovu bazu.
+For production, set `database_id` in an untracked local Wrangler configuration to the correct D1 database ID before applying migrations or deploying.
 
----
+## Managing a portfolio
 
-## 📸 Kako fotograf objavljuje novu galeriju
+1. Open `/admin` on the deployed site and sign in.
+2. Use **New Upload** to choose a folder of photos, add a title, and publish a gallery.
+3. Use **Settings** for site details, contact information, SEO, and homepage marquee entries.
+4. Use **Design** to preview and publish a design preset, or connect an MCP client and call `redesign_site` with an AI design brief.
+5. Use **Posts**, **Events**, and **Pages** to manage the rest of the portfolio.
 
-1. Otvori `https://<site>/admin` → prijava lozinkom.
-2. **Novi upload** → odabere **mapu** s fotografijama → napiše naziv (npr. „Koncert Arena 2026").
-3. Klikne **Objavi** → fotografije se obrađuju i uploadaju, AI u pozadini opisuje i tagira.
-4. Galerija se pojavi na stranici, u kalendar (ako je datum postavljen) i u meniju.
+## RapidRaw integration
 
----
+RapidRaw can publish a gallery with:
 
-## 🔌 rapidraw-web integracija
-
-Iz rapidraw-web softvera moguće je **izravno objaviti galeriju** pozivom na:
-
-```
+```http
 POST /api/rapidraw/publish
+Content-Type: application/json
 ```
-
-Tijelo (JSON):
 
 ```json
 {
   "apiKey": "RAPIDRAW_API_KEY",
-  "title": "Koncert Arena 2026",
-  "description": "Galerija s koncerta",
+  "title": "Concert Arena 2026",
+  "description": "A photo gallery from the concert",
   "eventDate": "2026-06-15",
   "location": "Zagreb",
   "images": [
-    { "url": "https://.../foto1.jpg" },
-    { "data": "<base64 ili data URI>", "width": 1600, "height": 1067 },
+    { "url": "https://example.com/photo.jpg" },
+    { "data": "<base64 or data URI>", "width": 1600, "height": 1067 },
     {
       "variants": [
-        { "width": 320, "data": "..." },
-        { "width": 1024, "data": "..." }
+        { "width": 320, "data": "<base64>" },
+        { "width": 1024, "data": "<base64>" }
       ]
     }
   ]
 }
 ```
 
-Odgovor: `{ "ok": true, "slug": "koncert-arena-2026", "galleryId": "...", "imagesStored": 12 }`
+The response includes the gallery slug, ID, and number of stored images. `GET /api/rapidraw/health` provides a health check.
 
-JavaScript primjer:
+## Project structure
 
-```js
-await fetch('https://<site>/api/rapidraw/publish', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ apiKey, title, eventDate, images: [{ data: base64, width, height }] }),
-})
+```text
+src/            Cloudflare Worker API, MCP server, and AI integrations
+  api/          API route modules
+  lib/          Authentication, AI, D1/R2, image processing, and settings
+frontend/       React and Vite application
+  src/pages/    Public portfolio routes
+  src/admin/    Admin panel
+migrations/     D1 schema migrations
+wrangler.jsonc  Cloudflare Worker, D1, R2, AI, and static-asset bindings
 ```
 
-> Za najbolje responzivne rezultate, rapidraw može slati više veličina kroz `variants` (npr. 320/640/1024/1600). Ako pošalje samo jednu, sustav je koristi kao jedinu varijantu.
-
-Zdravstvena provjera: `GET /api/rapidraw/health`.
-
----
-
-## 🗂 Struktura
-
-```
-src/            → Worker (API + AI + R2/D1), Hono
-  api/          → route moduli (auth, galleries, images, events, posts, pages, search, rapidraw, files)
-  lib/          → auth, ai, r2, serialize, process, site, helpers
-frontend/       → React + Vite aplikacija (javni portfolio + admin)
-  src/pages/    → javne stranice
-  src/admin/    → admin panel
-migrations/     → D1 shema
-public/         → izgrađeni frontend (generira se s `npm run build`)
-```
-
----
-
-## ✨ Što sve podržava
-
-- ✅ Galerije s **AI opisom, tagovima, naslovnom slikom i SEO meta** podacima
-- ✅ **Responzivne slike** (više veličina, WebP, `srcset`, lazy-load)
-- ✅ **Lightbox** s tipkovnicom (← → Esc)
-- ✅ **Kalendar događaja** (nadolazeći + prošli, po mjesecima)
-- ✅ **Blog objave** s mini-markdown (`**bold**`, `*italic*`, linkovi, embed)
-- ✅ **Stranice** (O meni, Kontakt…) koje se automatski dodaju u meni
-- ✅ **Društvene mreže** u footeru + **embed wall** na početnoj
-- ✅ **Pretraga** fotografija po opisu i tagovima
-- ✅ **Tamna / svijetla tema**, prilagodljiva boja akcenta
-- ✅ **Dvojezično** sučelje (HR / EN)
-- ✅ SSR **og:meta** za dijeljenje (Instagram/TikTok/Facebook prikaz linka)
-- ✅ **One-click deploy** za bilo kojeg fotografa
-
----
-
-*Napravljeno za Cloudflare Workers, R2, D1 i Workers AI. Bez servera, bez egress troškova.*
+LumenFolio is built with Cloudflare Workers, D1, R2, Workers AI, Hono, React, and Vite.

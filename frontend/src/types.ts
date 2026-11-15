@@ -23,6 +23,7 @@ export interface SiteSettings {
   contact: { email: string; phone: string; address: string; city: string }
   socials: Social[]
   embeds: Embed[]
+  marqueeItems: string[]
   seo: { title: string; description: string; image: string; keywords: string }
   showCalendar: boolean
   showPosts: boolean

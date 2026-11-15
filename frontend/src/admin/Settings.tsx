@@ -81,6 +81,17 @@ export function Settings() {
           <input className="input" value={s.tagline} onChange={(e) => up({ tagline: e.target.value })} />
         </div>
         <div className="field">
+          <label>Tekst klizača na početnoj stranici</label>
+          <textarea
+            className="textarea"
+            rows={4}
+            value={s.marqueeItems.join('\n')}
+            onChange={(e) => up({ marqueeItems: e.target.value.split('\n').map((item) => item.trim()).filter(Boolean) })}
+            placeholder={'Koncerti\nRock i metal\nIza pozornice'}
+          />
+          <p className="muted" style={{ fontSize: '0.82rem', margin: '6px 0 0' }}>Svaki redak postaje jedna stavka. Isprazni polje za skrivanje klizača.</p>
+        </div>
+        <div className="field">
           <label>O meni (About)</label>
           <textarea className="textarea" rows={4} value={s.about} onChange={(e) => up({ about: e.target.value })} />
         </div>

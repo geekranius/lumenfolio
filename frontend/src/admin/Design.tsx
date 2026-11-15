@@ -5,7 +5,7 @@ import { api } from '../api'
 import { PRESETS, FONT_PAIRS, applyDesign, normalizeDesign, type DesignConfig } from '../lib/design'
 import type { SiteSettings } from '../types'
 
-const ACCENTS = ['#c8a24a', '#d4b06a', '#b08968', '#f2f2f2', '#ff5d5d', '#4f7cff', '#34d399', '#e272b4', '#7c5cff', '#111111']
+const ACCENTS = ['#d52f40', '#c82034', '#f2eee9', '#c8a24a', '#4f7cff', '#34d399', '#e272b4', '#7c5cff', '#111111']
 const FONT_KEYS = Object.keys(FONT_PAIRS)
 
 export function Design() {

@@ -43,6 +43,7 @@ export interface SiteSettings {
   }
   socials: Social[]
   embeds: Embed[]
+  marqueeItems: string[]
   seo: {
     title: string
     description: string

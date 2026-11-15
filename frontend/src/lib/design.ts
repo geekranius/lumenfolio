@@ -9,19 +9,39 @@ export interface DesignConfig {
   animations: boolean
   grain: boolean
   headingCase: 'normal' | 'uppercase'
+  palette?: {
+    dark: ColorPalette
+    light: ColorPalette
+  }
+}
+
+export interface ColorPalette {
+  background: string
+  backgroundSoft: string
+  surface: string
+  surfaceRaised: string
+  text: string
+  muted: string
+  border: string
+}
+
+export const STAGE_PALETTE = {
+  dark: { background: '#09090b', backgroundSoft: '#101014', surface: '#151519', surfaceRaised: '#1c1c21', text: '#f2eee9', muted: '#aaa7a8', border: '#302a2c' },
+  light: { background: '#f5f2ef', backgroundSoft: '#ebe7e4', surface: '#ffffff', surfaceRaised: '#f3efec', text: '#171416', muted: '#60585a', border: '#d9d0d2' },
 }
 
 export const DEFAULT_DESIGN: DesignConfig = {
-  preset: 'cinematic',
+  preset: 'stage',
   mode: 'dark',
-  accent: '#c8a24a',
-  fontPair: 'cormorant-inter',
+  accent: '#d52f40',
+  fontPair: 'anton-inter',
   layout: 'masonry',
   hero: 'cinematic',
-  radius: 14,
+  radius: 6,
   animations: true,
   grain: true,
-  headingCase: 'normal',
+  headingCase: 'uppercase',
+  palette: STAGE_PALETTE,
 }
 
 export const FONT_PAIRS: Record<string, { label: string; display: string; body: string; url: string }> = {
@@ -76,6 +96,10 @@ export const FONT_PAIRS: Record<string, { label: string; display: string; body: 
 }
 
 export const PRESETS: Record<string, { label: string; design: DesignConfig }> = {
+  stage: {
+    label: 'Stage / Rock',
+    design: { preset: 'stage', mode: 'dark', accent: '#d52f40', fontPair: 'anton-inter', layout: 'masonry', hero: 'cinematic', radius: 6, animations: true, grain: true, headingCase: 'uppercase', palette: STAGE_PALETTE },
+  },
   cinematic: {
     label: 'Cinematic',
     design: { preset: 'cinematic', mode: 'dark', accent: '#c8a24a', fontPair: 'cormorant-inter', layout: 'masonry', hero: 'cinematic', radius: 14, animations: true, grain: true, headingCase: 'normal' },
@@ -131,7 +155,16 @@ export const PRESETS: Record<string, { label: string; design: DesignConfig }> = 
 }
 
 export function normalizeDesign(d?: Partial<DesignConfig> | null): DesignConfig {
-  return { ...DEFAULT_DESIGN, ...(d || {}) }
+  const input = d || {}
+  return {
+    ...DEFAULT_DESIGN,
+    ...input,
+    fontPair: input.fontPair && FONT_PAIRS[input.fontPair] ? input.fontPair : DEFAULT_DESIGN.fontPair,
+    palette: {
+      dark: { ...STAGE_PALETTE.dark, ...(input.palette?.dark || {}) },
+      light: { ...STAGE_PALETTE.light, ...(input.palette?.light || {}) },
+    },
+  }
 }
 
 let injectedFontUrl = ''
@@ -156,6 +189,14 @@ export function applyDesign(input: DesignConfig) {
   root.style.setProperty('--radius-lg', `${d.radius * 1.5}px`)
   root.style.setProperty('--font-display', pair.display)
   root.style.setProperty('--font-sans', pair.body)
+  const palette = d.palette?.[mode] || STAGE_PALETTE[mode]
+  root.style.setProperty('--bg', palette.background)
+  root.style.setProperty('--bg-soft', palette.backgroundSoft)
+  root.style.setProperty('--surface', palette.surface)
+  root.style.setProperty('--surface-2', palette.surfaceRaised)
+  root.style.setProperty('--text', palette.text)
+  root.style.setProperty('--text-dim', palette.muted)
+  root.style.setProperty('--border', palette.border)
 
   if (injectedFontUrl !== pair.url) {
     injectedFontUrl = pair.url

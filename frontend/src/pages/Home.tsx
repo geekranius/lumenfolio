@@ -73,7 +73,7 @@ export function Home() {
         </div>
       </section>
 
-      <Marquee items={['Koncerti', 'Portreti', 'Događaji', 'Vjenčanja', 'Reportaže']} />
+      {site.marqueeItems.length ? <Marquee items={site.marqueeItems} /> : null}
 
       {galleries.length > 0 && (
         <section className="section">

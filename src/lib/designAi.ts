@@ -1,11 +1,13 @@
 import type { Env } from '../types'
 
-const PRESETS = 'cinematic, editorial, minimal, noir, vibrant, lux, gallery, nocturne, wander, mono, polaroid, expose, reverie'
+const PRESETS = 'stage, cinematic, editorial, minimal, noir, vibrant, lux, gallery, nocturne, wander, mono, polaroid, expose, reverie'
 const FONTS = 'cormorant-inter, playfair-source, dmserif-dmsans, bodoni-jost, sora-space, fraunces-inter, anton-inter, archivo'
 
 const SYSTEM = [
   'You are a senior web design director for photographers.',
-  'Translate the user request into a portfolio design config.',
+  'Translate the request into a complete, production-ready visual design system for the entire photography site.',
+  'This design applies across the home page, gallery listings, gallery details, posts, events, search, static pages, navigation, and footer.',
+  'Preserve every existing page, gallery, photo, event, post, and site setting. Only return safe visual design tokens and options; never invent content or CSS.',
   'Output a single JSON object, no markdown, no code fences, with exactly these keys:',
   `"preset" (one of ${PRESETS})`,
   '"mode" ("dark" or "light")',
@@ -17,7 +19,13 @@ const SYSTEM = [
   '"animations" (true or false)',
   '"grain" (true or false)',
   '"headingCase" ("normal" or "uppercase")',
+  '"palette" (object with "dark" and "light" objects; each object has hex color keys "background", "backgroundSoft", "surface", "surfaceRaised", "text", "muted", and "border")',
 ].join('\n')
+
+const STAGE_PALETTE = {
+  dark: { background: '#09090b', backgroundSoft: '#101014', surface: '#151519', surfaceRaised: '#1c1c21', text: '#f2eee9', muted: '#aaa7a8', border: '#302a2c' },
+  light: { background: '#f5f2ef', backgroundSoft: '#ebe7e4', surface: '#ffffff', surfaceRaised: '#f3efec', text: '#171416', muted: '#60585a', border: '#d9d0d2' },
+}
 
 function parseJson(text: string): Record<string, any> | null {
   let t = text.trim()
@@ -35,8 +43,8 @@ function parseJson(text: string): Record<string, any> | null {
 function fallbackDesign(prompt: string): Record<string, any> {
   const p = prompt.toLowerCase()
   const d: Record<string, any> = {
-    preset: 'cinematic', mode: 'dark', accent: '#c8a24a', fontPair: 'cormorant-inter',
-    layout: 'masonry', hero: 'cinematic', radius: 14, animations: true, grain: true, headingCase: 'normal',
+    preset: 'stage', mode: 'dark', accent: '#d52f40', fontPair: 'anton-inter',
+    layout: 'masonry', hero: 'cinematic', radius: 6, animations: true, grain: true, headingCase: 'uppercase', palette: STAGE_PALETTE,
   }
   if (/svijetl|light|bright|airy|bijel|white|čist|clean|pastel/.test(p)) d.mode = 'light'
   if (/minimal|čist|simple|clean/.test(p)) {
@@ -62,6 +70,16 @@ function fallbackDesign(prompt: string): Record<string, any> {
   return d
 }
 
+function sanitizePalette(value: unknown) {
+  const source = value && typeof value === 'object' ? value as Record<string, any> : {}
+  const keys = ['background', 'backgroundSoft', 'surface', 'surfaceRaised', 'text', 'muted', 'border'] as const
+  const clean = (mode: 'dark' | 'light') => {
+    const input = source[mode] && typeof source[mode] === 'object' ? source[mode] : {}
+    return Object.fromEntries(keys.map((key) => [key, /^#[0-9a-f]{6}$/i.test(input[key]) ? input[key] : STAGE_PALETTE[mode][key]]))
+  }
+  return { dark: clean('dark'), light: clean('light') }
+}
+
 function sanitize(parsed: Record<string, any>, prompt: string): Record<string, any> {
   const fb = fallbackDesign(prompt)
   const accent = /^#[0-9a-f]{6}$/i.test(parsed.accent) ? parsed.accent : fb.accent
@@ -76,6 +94,7 @@ function sanitize(parsed: Record<string, any>, prompt: string): Record<string, a
     animations: typeof parsed.animations === 'boolean' ? parsed.animations : fb.animations,
     grain: typeof parsed.grain === 'boolean' ? parsed.grain : fb.grain,
     headingCase: parsed.headingCase === 'uppercase' ? 'uppercase' : fb.headingCase,
+    palette: sanitizePalette(parsed.palette || fb.palette),
   }
 }
 
@@ -83,7 +102,7 @@ export async function designFromPrompt(ai: Ai, prompt: string): Promise<Record<s
   try {
     const res: any = await (ai as any).run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [{ role: 'user', content: `${SYSTEM}\n\nUser request: ${prompt}` }],
-      max_tokens: 300,
+      max_tokens: 700,
     })
     const text: string = (res?.response ?? res?.choices?.[0]?.message?.content ?? '').trim()
     const parsed = parseJson(text)

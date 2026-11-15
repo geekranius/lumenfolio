@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Menu, X, Sun, Moon, Search } from 'lucide-react'
 import { useSite } from '../store'
+import { applyDesign } from '../lib/design'
 import type { PageItem } from '../types'
 
 export function Nav({ pages }: { pages: PageItem[] }) {
@@ -25,6 +26,7 @@ export function Nav({ pages }: { pages: PageItem[] }) {
     setDark(next)
     document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light')
     localStorage.setItem('lf_theme_override', next ? 'dark' : 'light')
+    applyDesign(site.design)
   }
 
   const links: Array<{ to: string; label: string }> = [
