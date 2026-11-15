@@ -72,6 +72,7 @@ export interface Gallery {
   status: string
   created_at: string
   image_count: number
+  cover_exif?: Record<string, any> | null
   cover: string | null
 }
 

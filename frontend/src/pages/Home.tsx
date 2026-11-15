@@ -7,7 +7,7 @@ import { Reveal } from '../components/Reveal'
 import { GalleryCard } from '../components/GalleryCard'
 import { EmbedBlock } from '../components/EmbedBlock'
 import { Marquee } from '../components/Marquee'
-import type { Gallery, Post, EventItem, ImageItem } from '../types'
+import type { Gallery, Post, EventItem } from '../types'
 import { formatDate } from '../lib/image'
 
 const pad = (value: number) => String(value).padStart(2, '0')
@@ -18,7 +18,6 @@ export function Home() {
   const [galleries, setGalleries] = useState<Gallery[]>([])
   const [posts, setPosts] = useState<Post[]>([])
   const [events, setEvents] = useState<EventItem[]>([])
-  const [featuredFrame, setFeaturedFrame] = useState<ImageItem | null>(null)
 
   useEffect(() => {
     api.get<Gallery[]>('/api/galleries').then(setGalleries).catch(() => {})
@@ -27,17 +26,8 @@ export function Home() {
   }, [])
 
   const latestGallery = galleries[0]
-  useEffect(() => {
-    if (!latestGallery) return
-    let active = true
-    api.get<{ images: ImageItem[] }>(`/api/galleries/${latestGallery.slug}`)
-      .then(({ images }) => { if (active) setFeaturedFrame(images?.[0] || null) })
-      .catch(() => {})
-    return () => { active = false }
-  }, [latestGallery?.slug])
-
-  const heroImage = featuredFrame?.src || latestGallery?.cover || site.avatar || ''
-  const heroExif = latestGallery?.show_exif ? featuredFrame?.exif : null
+  const heroImage = latestGallery?.cover || site.avatar || ''
+  const heroExif = latestGallery?.show_exif ? latestGallery?.cover_exif : null
   const cameraName = [heroExif?.Make, heroExif?.Model].filter(Boolean).join(' ') || (locale === 'en' ? 'STAGE UNIT / GF-01' : 'POZORNICA / GF-01')
   const shutter = Number(heroExif?.ExposureTime)
   const aperture = Number(heroExif?.FNumber)
@@ -49,6 +39,7 @@ export function Home() {
     { label: locale === 'en' ? 'SHUTTER' : 'OKIDAČ', value: shutterLabel },
     { label: locale === 'en' ? 'FOCAL' : 'ŽARIŠNA', value: heroExif?.FocalLength ? `${heroExif.FocalLength} mm` : '—' },
   ]
+  const exifReadoutCount = heroExif ? gearReadouts.filter((item) => item.value !== '—').length : 0
   const description = site.description?.trim() || ''
   const about = site.about?.trim() || ''
   const showDescription = description && !/^(profesionalni fotografski portfolio\.?|professional photography portfolio\.?)$/i.test(description)
@@ -153,7 +144,7 @@ export function Home() {
               </figcaption>
             </figure>
             <div className="signal-gear-readout" aria-label={locale === 'en' ? 'Camera EXIF readout' : 'EXIF podaci kamere'}>
-              <div className="signal-gear-heading"><span><ScanLine size={13} /> {locale === 'en' ? 'CAMERA TELEMETRY' : 'TELEMETRIJA KAMERE'}</span><span>EXIF // 0{gearReadouts.filter((item) => item.value !== '—').length}</span></div>
+              <div className="signal-gear-heading"><span><ScanLine size={13} /> {locale === 'en' ? 'CAMERA TELEMETRY' : 'TELEMETRIJA KAMERE'}</span><span>EXIF // 0{exifReadoutCount}</span></div>
               <div className="signal-gear-values">
                 {gearReadouts.map((item) => <div key={item.label}><span>{item.label}</span><strong>{item.value}</strong></div>)}
               </div>

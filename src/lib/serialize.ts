@@ -19,6 +19,7 @@ export interface GalleryRow {
   status: string
   created_at: string
   image_count?: number
+  cover_exif?: string | null
 }
 
 export function mapGallery(env: Env, row: GalleryRow): Gallery {
@@ -40,6 +41,7 @@ export function mapGallery(env: Env, row: GalleryRow): Gallery {
     created_at: row.created_at,
     image_count: row.image_count ?? 0,
     cover: row.cover_image_id ? imagePath(env, row.id, row.cover_image_id, 640) : null,
+    cover_exif: parseJson(row.cover_exif, null),
   }
 }
 

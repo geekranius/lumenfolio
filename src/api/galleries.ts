@@ -10,7 +10,9 @@ import { galleryText } from '../lib/ai'
 const app = new Hono<{ Bindings: Env }>()
 
 const LIST_SQL = `
-  SELECT g.*, (SELECT COUNT(*) FROM images i WHERE i.gallery_id = g.id) AS image_count
+  SELECT g.*,
+    (SELECT COUNT(*) FROM images i WHERE i.gallery_id = g.id) AS image_count,
+    (SELECT i.exif FROM images i WHERE i.id = g.cover_image_id) AS cover_exif
   FROM galleries g
   WHERE g.status = 'published'
   ORDER BY COALESCE(g.event_date, g.created_at) DESC, g.sort_order ASC
@@ -24,7 +26,9 @@ app.get('/', async (c) => {
 app.get('/:slug', async (c) => {
   const slug = c.req.param('slug')
   const gallery = await c.env.DB.prepare(
-    `SELECT g.*, (SELECT COUNT(*) FROM images i WHERE i.gallery_id = g.id) AS image_count
+    `SELECT g.*,
+       (SELECT COUNT(*) FROM images i WHERE i.gallery_id = g.id) AS image_count,
+       (SELECT i.exif FROM images i WHERE i.id = g.cover_image_id) AS cover_exif
      FROM galleries g WHERE g.slug = ? AND g.status = 'published'`,
   )
     .bind(slug)
