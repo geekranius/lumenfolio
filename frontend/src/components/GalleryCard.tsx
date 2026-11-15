@@ -32,6 +32,11 @@ export function GalleryCard({ gallery, locale, index = 1, variant = 'standard' }
           <span>{String(imageCount).padStart(3, '0')} {countLabel}</span>
         </div>
         <h3>{gallery.title}</h3>
+        {gallery.tags?.some((tag) => tag.startsWith('#')) ? (
+          <div className="signal-card-hashtags" aria-label={locale === 'en' ? 'Gallery topics' : 'Teme galerije'}>
+            {gallery.tags.filter((tag) => tag.startsWith('#')).slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}
+          </div>
+        ) : null}
         <div className="signal-card-footer">
           <span>{gallery.location || (locale === 'en' ? 'Concert archive' : 'Koncertna arhiva')}</span>
           <span className="signal-card-cta">{locale === 'en' ? 'OPEN SET' : 'OTVORI GALERIJU'} <ArrowUpRight size={14} /></span>

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { SiteProvider } from './store'
 import { PublicLayout } from './components/PublicLayout'
+import { SeoSync } from './components/SeoSync'
 import { AdminLayout, RequireAuth } from './components/AdminLayout'
 
 import { Home } from './pages/Home'
@@ -30,6 +31,7 @@ export default function App() {
   return (
     <SiteProvider>
       <BrowserRouter>
+        <SeoSync />
         <Routes>
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Home />} />

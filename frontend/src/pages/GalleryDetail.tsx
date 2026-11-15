@@ -63,7 +63,12 @@ export function GalleryDetail() {
           )}
         />
 
-        {gallery.tags?.length ? <div className="signal-detail-tags">{gallery.tags.map((tag) => <span className="tag" key={tag}>{tag}</span>)}</div> : null}
+        {gallery.tags?.some((tag) => tag.startsWith('#')) ? (
+          <div className="signal-detail-tags" aria-label={locale === 'en' ? 'Gallery hashtags' : 'Hashtagovi galerije'}>
+            <span className="signal-hashtag-label">{locale === 'en' ? 'DISCOVERY TAGS' : 'HASHTAGOVI'}</span>
+            {gallery.tags.filter((tag) => tag.startsWith('#')).map((tag) => <span className="signal-hashtag" key={tag}>{tag}</span>)}
+          </div>
+        ) : null}
         {gallery.body ? <div className="prose signal-gallery-story">{renderBody(gallery.body)}</div> : null}
 
         <div className="signal-share-row">
