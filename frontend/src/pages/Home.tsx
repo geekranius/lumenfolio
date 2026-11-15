@@ -27,6 +27,10 @@ export function Home() {
 
   const latestGallery = galleries[0]
   const heroImage = latestGallery?.cover || site.avatar || ''
+  const description = site.description?.trim() || ''
+  const about = site.about?.trim() || ''
+  const showDescription = description && !/^(profesionalni fotografski portfolio\.?|professional photography portfolio\.?)$/i.test(description)
+  const showAbout = about && !/^dobrodošli! ovdje možete upisati nešto o sebi i svom radu\.?$/i.test(about)
   const totalPhotos = galleries.reduce((sum, gallery) => sum + (gallery.image_count || 0), 0)
   const longestSet = galleries.reduce<Gallery | undefined>(
     (longest, gallery) => (!longest || (gallery.image_count || 0) > (longest.image_count || 0) ? gallery : longest),
@@ -62,7 +66,7 @@ export function Home() {
               )}
             </h1>
             <p className="signal-tagline">{site.tagline}</p>
-            <p className="signal-description">{site.description}</p>
+            {showDescription ? <p className="signal-description">{description}</p> : null}
 
             <div className="signal-hero-actions">
               <Link to="/galleries" className="btn btn-primary signal-button">
@@ -195,7 +199,7 @@ export function Home() {
         </section>
       ) : null}
 
-      {site.about ? (
+      {showAbout ? (
         <section className="signal-about section">
           <div className="container signal-about-inner">
             <div className="signal-about-stamp">
@@ -205,7 +209,7 @@ export function Home() {
             <div className="signal-about-copy">
               <span className="signal-section-code">PROFILE / 03</span>
               <h2>{t('home.about')}</h2>
-              <p>{site.about}</p>
+              <p>{about}</p>
               {site.contact.email ? <a href={`mailto:${site.contact.email}`} className="signal-all-link">{t('home.contact')} <ArrowRight size={16} /></a> : null}
             </div>
             <div className="signal-about-side">
