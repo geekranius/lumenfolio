@@ -34,7 +34,7 @@ export function PostDetail() {
           <ArrowLeft size={15} /> {t('common.back')}
         </Link>
 
-        <SignalPageHeader code="FIELD NOTE / 04" label={formatDate(post.published_at, locale)} title={post.title} />
+        <SignalPageHeader code={locale === 'en' ? 'BLOG POST' : 'OBJAVA'} label={formatDate(post.published_at, locale)} title={post.title} />
         {post.cover ? <img className="signal-article-cover" src={post.cover} alt={post.title} /> : null}
         <article className="prose signal-article-body">
           {post.body ? renderBody(post.body) : null}

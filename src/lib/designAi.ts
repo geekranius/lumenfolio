@@ -64,14 +64,16 @@ function fallbackDesign(prompt: string): Record<string, any> {
   if (/editorial|elegant|serif|lux|luksuz|klas/.test(p)) {
     d.preset = 'editorial'; d.fontPair = 'playfair-source'; d.grain = false; d.radius = 4
   }
-  if (/signal|geek|metal|rock|concert|koncert|terenski|afterdark|archive|arhiv/.test(p)) {
+  if (/metal|rock|concert|koncert/.test(p)) {
+    d.preset = 'stage'; d.mode = 'dark'; d.accent = '#cf3443'; d.fontPair = 'anton-inter'; d.layout = 'masonry'; d.hero = 'cinematic'; d.radius = 5; d.headingCase = 'normal'; d.palette = STAGE_PALETTE
+  } else if (/signal|geek|terenski|afterdark|archive|arhiv/.test(p)) {
     d.preset = 'signal'; d.mode = 'dark'; d.accent = '#c4f36a'; d.fontPair = 'sora-space'; d.layout = 'masonry'; d.hero = 'cinematic'; d.radius = 8; d.headingCase = 'normal'; d.palette = SIGNAL_PALETTE
   }
   if (/mozaik|masonry/.test(p)) d.layout = 'masonry'
   if (/mrež|grid|kvadrat/.test(p)) d.layout = 'grid'
   const colors: Record<string, string> = {
     zlatn: '#c8a24a', gold: '#c8a24a', žut: '#d4b06a', plav: '#4f7cff', blue: '#4f7cff',
-    crven: '#ff5d5d', red: '#ff5d5d', zelen: '#34d399', green: '#34d399',
+    crven: '#cf3443', red: '#cf3443', crimson: '#cf3443', burgundy: '#8d1b27', zelen: '#34d399', green: '#34d399',
     lime: '#c4f36a', chartreuse: '#c4f36a', 'fosforno-zelen': '#c4f36a',
     ljubičast: '#7c5cff', purple: '#7c5cff', roza: '#e272b4', pink: '#e272b4', bež: '#b08968', beige: '#b08968',
   }

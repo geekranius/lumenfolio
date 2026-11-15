@@ -4,10 +4,12 @@ import { api } from '../api'
 import { Loading } from '../components/ui'
 import { renderBody } from '../lib/render'
 import { SignalPageHeader } from '../components/SignalPageHeader'
+import { useSite } from '../store'
 import type { PageItem } from '../types'
 
 export function PageView() {
   const { slug } = useParams()
+  const { locale } = useSite()
   const [page, setPage] = useState<PageItem | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -27,7 +29,7 @@ export function PageView() {
     <section className="signal-subpage signal-static-page section">
       <div className="container">
         <div className="prose">
-          <SignalPageHeader code="INFO / 06" label="FIELD FILE" title={page.title} />
+          <SignalPageHeader code={locale === 'en' ? 'INFORMATION' : 'INFORMACIJE'} label="Geekranius" title={page.title} />
           {page.body ? renderBody(page.body) : null}
         </div>
       </div>

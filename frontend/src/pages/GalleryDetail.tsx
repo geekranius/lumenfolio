@@ -47,11 +47,11 @@ export function GalleryDetail() {
       <div className="container">
         <div className="signal-detail-top">
           <Link to="/galleries" className="signal-back-link"><ArrowLeft size={15} /> {t('gallery.backToGalleries')}</Link>
-          <span>GEEKRANIUS / ARCHIVE FILE</span>
+          <span>{locale === 'en' ? 'CONCERT PHOTOGRAPHY' : 'KONCERTNA FOTOGRAFIJA'}</span>
         </div>
 
         <SignalPageHeader
-          code="GALLERY / LIVE FILE"
+          code={locale === 'en' ? 'PHOTO GALLERY' : 'FOTO GALERIJA'}
           label={gallery.event_date ? formatDate(gallery.event_date, locale) : (locale === 'en' ? 'Undated session' : 'Nedatirana sesija')}
           title={gallery.title}
           description={gallery.description || undefined}
@@ -65,18 +65,18 @@ export function GalleryDetail() {
 
         {gallery.tags?.some((tag) => tag.startsWith('#')) ? (
           <div className="signal-detail-tags" aria-label={locale === 'en' ? 'Gallery hashtags' : 'Hashtagovi galerije'}>
-            <span className="signal-hashtag-label">{locale === 'en' ? 'DISCOVERY TAGS' : 'HASHTAGOVI'}</span>
+            <span className="signal-hashtag-label">{locale === 'en' ? 'TAGS' : 'OZNAKE'}</span>
             {gallery.tags.filter((tag) => tag.startsWith('#')).map((tag) => <span className="signal-hashtag" key={tag}>{tag}</span>)}
           </div>
         ) : null}
         {gallery.body ? <div className="prose signal-gallery-story">{renderBody(gallery.body)}</div> : null}
 
         <div className="signal-share-row">
-          <span>{locale === 'en' ? 'SHARE THIS FILE' : 'PODIJELI OVAJ ZAPIS'}</span>
+          <span>{locale === 'en' ? 'SHARE THIS GALLERY' : 'PODIJELI GALERIJU'}</span>
           <a className="tag" href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer">Facebook</a>
           <a className="tag" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(gallery.title)}`} target="_blank" rel="noopener noreferrer">X</a>
           <a className="tag" href={`https://wa.me/?text=${encodeURIComponent(`${gallery.title} ${shareUrl}`)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
-          <span className="signal-share-count">{images.length} / {locale === 'en' ? 'FRAMES' : 'FOTOGRAFIJA'}</span>
+          <span className="signal-share-count">{images.length} {locale === 'en' ? 'PHOTOS' : 'FOTOGRAFIJA'}</span>
         </div>
 
         <div className="signal-photo-grid">
@@ -95,7 +95,6 @@ export function GalleryDetail() {
                   />
                   <div className="shade" />
                   <div className="zoom">+</div>
-                  <span className="signal-photo-number">{String(i + 1).padStart(3, '0')}</span>
                 </button>
               </Reveal>
             </div>

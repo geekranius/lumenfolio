@@ -8,7 +8,7 @@ import { api } from '../api'
 import type { PageItem } from '../types'
 
 export function PublicLayout() {
-  const { loading } = useSite()
+  const { loading, site } = useSite()
   const [pages, setPages] = useState<PageItem[]>([])
 
   useEffect(() => {
@@ -21,8 +21,8 @@ export function PublicLayout() {
   if (loading) {
     return (
       <div className="signal-boot" role="status" aria-live="polite">
-        <span className="signal-boot-mark" aria-hidden="true"><i>GF</i></span>
-        <span>GEEKRANIUS / FIELD ARCHIVE</span>
+        <span className="signal-boot-mark" aria-hidden="true">GEEKRANIUS</span>
+        <span>{site.tagline || 'Koncertna fotografija'}</span>
         <span className="signal-boot-line" aria-hidden="true" />
       </div>
     )

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Camera, ScanLine, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Camera, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ImageItem } from '../types'
 
 type ExifRow = { label: string; value: string; wide?: boolean }
@@ -66,7 +66,7 @@ export function Lightbox({
   const node = (
     <div className={`lightbox${images.length > 1 ? ' has-thumbs' : ' no-thumbs'}`} onClick={onClose} role="dialog" aria-modal="true" aria-label={english ? 'Photo viewer' : 'Pregled fotografije'}>
       <div className="lb-stage" onClick={(e) => e.stopPropagation()}>
-        <div className="lb-stage-readout"><ScanLine size={14} /><span>GEEKRANIUS / LIVE FRAME</span><i /></div>
+        <div className="lb-stage-readout">{english ? 'PHOTO' : 'FOTOGRAFIJA'}</div>
         <img className="lb-img" src={img.full} alt={img.alt || img.caption || ''} />
         {images.length > 1 && (
           <>
@@ -82,7 +82,7 @@ export function Lightbox({
 
       <aside className="lb-panel" onClick={(e) => e.stopPropagation()}>
         <button className="lb-btn lb-close" onClick={onClose} aria-label="Zatvori pregled"><X size={20} /></button>
-        <div className="lb-panel-topline"><span><Camera size={14} /> {english ? 'CAPTURE DATA' : 'PODACI SNIMANJA'}</span><span>EXIF / {readout.length ? '01' : '—'}</span></div>
+        <div className="lb-panel-topline"><span><Camera size={14} /> {english ? 'CAMERA DATA' : 'PODACI KAMERE'}</span><span>EXIF</span></div>
         {img.caption ? <p className="lb-panel-caption">{img.caption}</p> : null}
         {showExif ? (
           readout.length ? (
@@ -95,8 +95,7 @@ export function Lightbox({
             </div>
           ) : <p className="lb-exif-empty">{english ? 'No embedded camera data for this frame.' : 'Za ovaj kadar nema ugrađenih EXIF podataka.'}</p>
         ) : null}
-        <div className="lb-counter"><span>{english ? 'FRAME' : 'KADAR'}</span><strong>{String(index + 1).padStart(3, '0')}</strong><i>/</i><span>{String(images.length).padStart(3, '0')}</span></div>
-        <span className="lb-panel-corner" aria-hidden="true">GF / 01</span>
+        <div className="lb-counter"><span>{english ? 'PHOTO' : 'FOTOGRAFIJA'}</span><strong>{String(index + 1).padStart(3, '0')}</strong><i>/</i><span>{String(images.length).padStart(3, '0')}</span></div>
       </aside>
 
       {images.length > 1 ? (

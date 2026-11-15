@@ -12,11 +12,11 @@ export function Footer({ pages }: { pages: PageItem[] }) {
   return (
     <footer className="signal-footer">
       <div className="container">
-        <div className="signal-footer-topline"><span>GEEKRANIUS / LIVE IMAGE ARCHIVE</span><span>END OF TRANSMISSION <i /></span></div>
+        <div className="signal-footer-topline"><span>{site.name} / {locale === 'en' ? 'CONCERT PHOTOGRAPHY' : 'KONCERTNA FOTOGRAFIJA'}</span><span>{locale === 'en' ? 'ROCK · METAL · LIVE MUSIC' : 'ROCK · METAL · GLAZBA UŽIVO'}</span></div>
         <div className="signal-footer-grid">
           <div className="signal-footer-identity">
             <div className="signal-footer-logo">
-              {site.logo ? <img src={site.logo} alt={`${site.name} logo`} /> : <span>GF / 01</span>}
+              {site.logo ? <img src={site.logo} alt={`${site.name} logo`} /> : <span>{site.name}</span>}
             </div>
             <p>{site.tagline}</p>
             {contact.email || contact.phone || contact.city ? (
@@ -45,7 +45,7 @@ export function Footer({ pages }: { pages: PageItem[] }) {
 
         <div className="signal-footer-bottom">
           <span>© {year} {site.name}. {locale === 'en' ? 'All rights reserved.' : 'Sva prava pridržana.'}</span>
-          <span className="signal-footer-coordinates">FIELD LOG / GF—001</span>
+          <span className="signal-footer-coordinates">portfolio.geekranius.stream</span>
           <Link to="/admin">{locale === 'en' ? 'ADMIN' : 'ADMINISTRACIJA'}</Link>
         </div>
       </div>

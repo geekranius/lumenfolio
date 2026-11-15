@@ -32,8 +32,8 @@ export function Posts() {
     <section className="signal-subpage signal-posts-page section">
       <div className="container">
         <SignalPageHeader
-          code="NOTES / 04"
-          label={locale === 'en' ? 'Field notes' : 'Terenske bilješke'}
+          code={locale === 'en' ? 'STORIES FROM THE ARCHIVE' : 'PRIČE IZ ARHIVE'}
+          label={locale === 'en' ? 'Concerts · people · places' : 'Koncerti · ljudi · mjesta'}
           title={t('nav.posts')}
           description={locale === 'en' ? 'Stories attached to the music, the people, and the rooms.' : 'Priče uz glazbu, ljude i prostore.'}
         />
@@ -45,12 +45,11 @@ export function Posts() {
             {stories.map((s, i) => (
               <Reveal key={s.id} delay={(i % 3) * 40}>
                 <Link to={`/gallery/${s.slug}`} className="signal-story">
-                  <span className="signal-story-index">0{i + 1} / FIELD NOTE</span>
                   {s.cover ? <img src={s.cover} alt={s.title} loading="lazy" /> : null}
                   <span className="signal-story-date">{formatDate(s.event_date, locale)}</span>
                   <strong>{s.title}</strong>
                   {s.description ? <span className="signal-story-description">{s.description}</span> : null}
-                  <span className="signal-story-link">{locale === 'en' ? 'OPEN STORY' : 'OTVORI PRIČU'}</span>
+                  <span className="signal-story-link">{locale === 'en' ? 'READ MORE' : 'PROČITAJ VIŠE'}</span>
                 </Link>
               </Reveal>
             ))}
@@ -60,12 +59,11 @@ export function Posts() {
             {posts.map((p, i) => (
               <Reveal key={p.id} delay={(i % 3) * 40}>
                 <Link to={`/post/${p.slug}`} className="signal-story">
-                  <span className="signal-story-index">0{i + 1} / FIELD NOTE</span>
                   {p.cover ? <img src={p.cover} alt={p.title} loading="lazy" /> : null}
                   <span className="signal-story-date">{formatDate(p.published_at, locale)}</span>
                   <strong>{p.title}</strong>
                   {p.excerpt ? <span className="signal-story-description">{p.excerpt}</span> : null}
-                  <span className="signal-story-link">{locale === 'en' ? 'OPEN STORY' : 'OTVORI PRIČU'}</span>
+                  <span className="signal-story-link">{locale === 'en' ? 'READ MORE' : 'PROČITAJ VIŠE'}</span>
                 </Link>
               </Reveal>
             ))}

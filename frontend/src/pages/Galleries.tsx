@@ -7,8 +7,6 @@ import { SignalPageHeader } from '../components/SignalPageHeader'
 import { Loading, Empty } from '../components/ui'
 import type { Gallery } from '../types'
 
-const pad = (value: number) => String(value).padStart(2, '0')
-
 export function Galleries() {
   const { t, locale } = useSite()
   const [galleries, setGalleries] = useState<Gallery[]>([])
@@ -32,14 +30,14 @@ export function Galleries() {
     <section className="signal-subpage signal-galleries-page section">
       <div className="container">
         <SignalPageHeader
-          code="ARCHIVE / 02"
-          label={locale === 'en' ? 'Field index' : 'Terenski indeks'}
+          code={locale === 'en' ? 'CONCERT PHOTOGRAPHY' : 'KONCERTNA FOTOGRAFIJA'}
+          label={locale === 'en' ? 'Rock · metal · live music' : 'Rock · metal · glazba uživo'}
           title={t('nav.galleries')}
           description={locale === 'en' ? 'Live music, caught between the first note and the last light.' : 'Glazba uživo, uhvaćena između prvog tona i posljednjeg svjetla.'}
           aside={(
             <div className="signal-page-readout">
               <span>{locale === 'en' ? 'COLLECTION SIZE' : 'VELIČINA ARHIVE'}</span>
-              <strong>{pad(galleries.length)} <i>/</i> {number.format(totalPhotos)}</strong>
+              <strong>{number.format(galleries.length)} <i>/</i> {number.format(totalPhotos)}</strong>
               <small>{locale === 'en' ? 'sets / photographs' : 'galerije / fotografije'}</small>
             </div>
           )}
@@ -53,12 +51,12 @@ export function Galleries() {
           <>
             <div className="signal-hashtag-radar">
               <div className="signal-hashtag-radar-heading">
-                <span className="signal-section-code">{locale === 'en' ? 'SIGNAL / FREQUENCIES' : 'SIGNAL / FREKVENCIJE'}</span>
+                <span className="signal-section-code">{locale === 'en' ? 'FILTER BY HASHTAG' : 'FILTRIRAJ PO HASHTAGU'}</span>
                 <span>{activeTag ? `${visibleGalleries.length} / ${galleries.length}` : `${hashtags.length} ${locale === 'en' ? 'topics' : 'tema'}`}</span>
               </div>
               <div className="signal-hashtag-radar-list" aria-label={locale === 'en' ? 'Filter by hashtag' : 'Filtriraj po hashtagovima'}>
                 <button type="button" className={`signal-hashtag${activeTag ? '' : ' is-active'}`} aria-pressed={!activeTag} onClick={() => setActiveTag(null)}>
-                  {locale === 'en' ? '#AllSignals' : '#Sve'}
+                  {locale === 'en' ? '#All' : '#Sve'}
                 </button>
                 {hashtags.map((tag) => (
                   <button type="button" className={`signal-hashtag${activeTag === tag ? ' is-active' : ''}`} aria-pressed={activeTag === tag} key={tag} onClick={() => setActiveTag(activeTag === tag ? null : tag)}>
@@ -72,12 +70,12 @@ export function Galleries() {
                 {visibleGalleries.map((gallery, i) => (
                   <div className={`signal-gallery-cell signal-gallery-cell-${i + 1}`} key={gallery.id}>
                     <Reveal delay={(i % 3) * 50}>
-                      <GalleryCard gallery={gallery} locale={locale} index={i + 1} variant={i === 0 ? 'feature' : i < 3 ? 'compact' : 'standard'} />
+                      <GalleryCard gallery={gallery} locale={locale} variant={i === 0 ? 'feature' : i < 3 ? 'compact' : 'standard'} />
                     </Reveal>
                   </div>
                 ))}
               </div>
-            ) : <p className="signal-hashtag-empty">{locale === 'en' ? 'No sets on this frequency yet.' : 'Još nema galerija na ovoj frekvenciji.'}</p>}
+            ) : <p className="signal-hashtag-empty">{locale === 'en' ? 'No galleries match this hashtag.' : 'Nijedna galerija ne odgovara ovom hashtagu.'}</p>}
           </>
         )}
       </div>
